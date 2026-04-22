@@ -232,8 +232,9 @@ sipp_cols_to_read_chr <- c(
   "TAGE", "EEDUC", "ESEX",
   # Filing status and income
   "EFSTATUS", "TPTOTINC", "TFTOTINC", "TPEARN",
-  # Account ownership (for Bucket 3)
+  # Account ownership + main-employer retirement-plan access
   "EOWN_THR401", "EOWN_IRAKEO",
+  "EMJOB_401", "EMJOB_IRA", "EMJOB_PEN",
   # Worker class (for all-classes scope verification)
   "EJB1_JBORSE", "EJB1_CLWRK",
   # Enrollment / student flags (EEDFTPT refines RENROLL/EEDENROLL to full-time)
@@ -607,7 +608,22 @@ sipp_derived_tbl <- sipp_dec_tbl |>
       TRUE ~ FALSE
     ),
 
-    # Age bands for reporting
+    # 5) Main-employer retirement-plan access (distinct from ownership).
+    #
+    # This addition is a broad employer-plan concept: 401k-type account,
+    # employer-provided IRA/Keogh, or DB/cash-balance plan through the
+    # respondent's MAIN employer or business during the reference period.
+    # "No" is assigned only when all three main-employer plan indicators are
+    # explicitly negative so we do not infer lack of access from ownership.
+    main_employer_retirement_access_chr = dplyr::case_when(
+      EMJOB_401 == 1 | EMJOB_IRA == 1 | EMJOB_PEN == 1 ~ "Yes",
+      EMJOB_401 == 2 & EMJOB_IRA == 2 & EMJOB_PEN == 2 ~ "No",
+      TRUE ~ "Missing"
+    ),
+    no_main_employer_retirement_access_flag =
+      main_employer_retirement_access_chr == "No",
+
+    # 6) Age bands for reporting
     age_band_chr = dplyr::case_when(
       TAGE >= 18 & TAGE <= 29 ~ "18-29",
       TAGE >= 30 & TAGE <= 49 ~ "30-49",
@@ -661,7 +677,14 @@ sm_universe_tbl <- sm_universe_tbl |>
     # B1 intersect ownership: any-match eligible AND holds a qualifying account.
     # Superset of B3; not nested with B2 (a full-match-eligible non-owner is in B2
     # but not here; a phaseout-range owner is here but not in B2).
-    bucket1_any_and_owns_flag  = bucket1_any_match_flag  & owns_qualifying_account_flag
+    bucket1_any_and_owns_flag = bucket1_any_match_flag & owns_qualifying_account_flag,
+    # Additive employer-plan access outputs. These do not alter the bucket
+    # definitions above; they only count eligible workers who explicitly report
+    # no retirement plan through their main employer or business.
+    bucket1_any_no_main_employer_plan_flag =
+      bucket1_any_match_flag & no_main_employer_retirement_access_flag,
+    bucket2_full_no_main_employer_plan_flag =
+      bucket2_full_match_flag & no_main_employer_retirement_access_flag
   )
 
 ###################################################################################
@@ -677,6 +700,12 @@ overall_tbl <- sm_universe_tbl |>
     bucket2_weighted_n = sum(WPFINWGT * bucket2_full_match_flag,    na.rm = TRUE),
     bucket3_weighted_n = sum(WPFINWGT * bucket3_full_and_owns_flag, na.rm = TRUE),
     bucket1_any_and_owns_weighted_n = sum(WPFINWGT * bucket1_any_and_owns_flag, na.rm = TRUE),
+    bucket1_no_main_employer_plan_weighted_n = sum(
+      WPFINWGT * bucket1_any_no_main_employer_plan_flag, na.rm = TRUE
+    ),
+    bucket2_no_main_employer_plan_weighted_n = sum(
+      WPFINWGT * bucket2_full_no_main_employer_plan_flag, na.rm = TRUE
+    ),
     universe_weighted_n = sum(WPFINWGT, na.rm = TRUE)
   )
 
@@ -688,6 +717,12 @@ by_filing_tbl <- sm_universe_tbl |>
     bucket2_weighted_n = sum(WPFINWGT * bucket2_full_match_flag,    na.rm = TRUE),
     bucket3_weighted_n = sum(WPFINWGT * bucket3_full_and_owns_flag, na.rm = TRUE),
     bucket1_any_and_owns_weighted_n = sum(WPFINWGT * bucket1_any_and_owns_flag, na.rm = TRUE),
+    bucket1_no_main_employer_plan_weighted_n = sum(
+      WPFINWGT * bucket1_any_no_main_employer_plan_flag, na.rm = TRUE
+    ),
+    bucket2_no_main_employer_plan_weighted_n = sum(
+      WPFINWGT * bucket2_full_no_main_employer_plan_flag, na.rm = TRUE
+    ),
     universe_weighted_n = sum(WPFINWGT, na.rm = TRUE),
     .groups = "drop"
   ) |>
@@ -698,6 +733,8 @@ by_filing_tbl <- sm_universe_tbl |>
   dplyr::select(group_chr, subgroup_chr,
                 bucket1_weighted_n, bucket2_weighted_n, bucket3_weighted_n,
                 bucket1_any_and_owns_weighted_n,
+                bucket1_no_main_employer_plan_weighted_n,
+                bucket2_no_main_employer_plan_weighted_n,
                 universe_weighted_n)
 
 # By age band
@@ -708,6 +745,12 @@ by_age_tbl <- sm_universe_tbl |>
     bucket2_weighted_n = sum(WPFINWGT * bucket2_full_match_flag,    na.rm = TRUE),
     bucket3_weighted_n = sum(WPFINWGT * bucket3_full_and_owns_flag, na.rm = TRUE),
     bucket1_any_and_owns_weighted_n = sum(WPFINWGT * bucket1_any_and_owns_flag, na.rm = TRUE),
+    bucket1_no_main_employer_plan_weighted_n = sum(
+      WPFINWGT * bucket1_any_no_main_employer_plan_flag, na.rm = TRUE
+    ),
+    bucket2_no_main_employer_plan_weighted_n = sum(
+      WPFINWGT * bucket2_full_no_main_employer_plan_flag, na.rm = TRUE
+    ),
     universe_weighted_n = sum(WPFINWGT, na.rm = TRUE),
     .groups = "drop"
   ) |>
@@ -718,6 +761,8 @@ by_age_tbl <- sm_universe_tbl |>
   dplyr::select(group_chr, subgroup_chr,
                 bucket1_weighted_n, bucket2_weighted_n, bucket3_weighted_n,
                 bucket1_any_and_owns_weighted_n,
+                bucket1_no_main_employer_plan_weighted_n,
+                bucket2_no_main_employer_plan_weighted_n,
                 universe_weighted_n)
 
 results_tbl <- dplyr::bind_rows(overall_tbl, by_filing_tbl, by_age_tbl) |>
@@ -726,6 +771,10 @@ results_tbl <- dplyr::bind_rows(overall_tbl, by_filing_tbl, by_age_tbl) |>
     bucket2_millions = round(bucket2_weighted_n / 1e6, 2),
     bucket3_millions = round(bucket3_weighted_n / 1e6, 2),
     bucket1_any_and_owns_millions = round(bucket1_any_and_owns_weighted_n / 1e6, 2),
+    bucket1_no_main_employer_plan_millions =
+      round(bucket1_no_main_employer_plan_weighted_n / 1e6, 2),
+    bucket2_no_main_employer_plan_millions =
+      round(bucket2_no_main_employer_plan_weighted_n / 1e6, 2),
     universe_millions = round(universe_weighted_n / 1e6, 2)
   )
 
@@ -1261,6 +1310,21 @@ memo_lines_chr <- c(
   paste0("- Any-match eligible AND currently hold a qualifying account: ",
          round(overall_tbl$bucket1_any_and_owns_weighted_n / 1e6, 1),
          " million workers (superset of Bucket 3; includes phaseout-range owners who are not in Bucket 2)."),
+  paste0("- Any-match eligible AND report NO retirement plan through their main employer/business: ",
+         round(overall_tbl$bucket1_no_main_employer_plan_weighted_n / 1e6, 1),
+         " million workers."),
+  paste0("- Full-match eligible AND report NO retirement plan through their main employer/business: ",
+         round(overall_tbl$bucket2_no_main_employer_plan_weighted_n / 1e6, 1),
+         " million workers."),
+  paste0("- Phaseout-range eligible AND report NO retirement plan through their main employer/business: ",
+         round(
+           (overall_tbl$bucket1_no_main_employer_plan_weighted_n -
+              overall_tbl$bucket2_no_main_employer_plan_weighted_n) / 1e6,
+           1
+         ),
+         " million workers."),
+  "",
+  "Employer-plan-access note: this addition uses EMJOB_401 / EMJOB_IRA / EMJOB_PEN and is distinct from the ownership-based qualifying-account measure above. It captures retirement plans provided through the respondent's main employer or business during the reference period.",
   "",
   "## Filer-basis comparison to EBRI (U5)",
   "",
