@@ -56,7 +56,7 @@ The pipeline skips Step 1 automatically if `pu2024_expanded.csv` already exists.
 - **CPI projection factor**: 1.0 (IRC sec 6433(h)(1) COLA first applies to TY2028+; 2027 uses statutory thresholds as written).
 - **Student / dependent exclusions**: IRC sec 25B cross-references apply; RENROLL + EEDFTPT are the primary student flags with an age/education/earnings fallback.
 - **Account qualification**: SIPP `EOWN_THR401 == 1` (has 401k/403b) or `EOWN_IRAKEO == 1` (has IRA/Keogh). DB pensions excluded.
-- **Main-employer plan access**: SIPP `EMJOB_401`, `EMJOB_IRA`, and `EMJOB_PEN` identify whether the respondent's main employer or business provided a retirement plan during the reference period. The additive “no main-employer plan” counts code access as “No” only when all three are explicitly `2`; mixed/unknown patterns remain outside the no-access count.
+- **Main-employer plan access**: the additive “may not have an employer-provided retirement plan” layer uses SIPP `EPENSNYN` (whether the main employer or business had any retirement plan for anyone in the company or organization) together with `EINCPENS` (whether the respondent was included in the offered plan(s)). A worker is counted in the no-plan group when `EPENSNYN == 2` or `EINCPENS == 2`; unresolved patterns remain outside the no-plan count.
 
 ## Income thresholds (2027, no COLA adjustment)
 
