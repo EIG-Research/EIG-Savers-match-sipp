@@ -234,6 +234,7 @@ sipp_cols_to_read_chr <- c(
   "EFSTATUS", "TPTOTINC", "TFTOTINC", "TPEARN",
   # Account ownership + main-employer retirement-plan access
   "EOWN_THR401", "EOWN_IRAKEO",
+  "EPENSNYN", "EINCPENS",
   "EMJOB_401", "EMJOB_IRA", "EMJOB_PEN",
   # Worker class (for all-classes scope verification)
   "EJB1_JBORSE", "EJB1_CLWRK",
@@ -610,14 +611,16 @@ sipp_derived_tbl <- sipp_dec_tbl |>
 
     # 5) Main-employer retirement-plan access (distinct from ownership).
     #
-    # This addition is a broad employer-plan concept: 401k-type account,
-    # employer-provided IRA/Keogh, or DB/cash-balance plan through the
-    # respondent's MAIN employer or business during the reference period.
-    # "No" is assigned only when all three main-employer plan indicators are
-    # explicitly negative so we do not infer lack of access from ownership.
+    # EPENSNYN is the broad screen: whether the respondent's main employer or
+    # business had any retirement plan for anyone in the company/organization.
+    # EINCPENS asks whether the respondent was included in the offered plan(s).
+    # For the worker-level "may not have an employer-provided retirement plan"
+    # addition, code "No" when the employer had no plan at all OR when a plan
+    # existed but the respondent was not included. We leave unresolved patterns
+    # as "Missing" rather than infer from plan-type or ownership variables.
     main_employer_retirement_access_chr = dplyr::case_when(
-      EMJOB_401 == 1 | EMJOB_IRA == 1 | EMJOB_PEN == 1 ~ "Yes",
-      EMJOB_401 == 2 & EMJOB_IRA == 2 & EMJOB_PEN == 2 ~ "No",
+      EINCPENS == 1 ~ "Yes",
+      EPENSNYN == 2 | EINCPENS == 2 ~ "No",
       TRUE ~ "Missing"
     ),
     no_main_employer_retirement_access_flag =
@@ -679,8 +682,8 @@ sm_universe_tbl <- sm_universe_tbl |>
     # but not here; a phaseout-range owner is here but not in B2).
     bucket1_any_and_owns_flag = bucket1_any_match_flag & owns_qualifying_account_flag,
     # Additive employer-plan access outputs. These do not alter the bucket
-    # definitions above; they only count eligible workers who explicitly report
-    # no retirement plan through their main employer or business.
+    # definitions above; they only count eligible workers who may not have an
+    # employer-provided retirement plan through their main employer or business.
     bucket1_any_no_main_employer_plan_flag =
       bucket1_any_match_flag & no_main_employer_retirement_access_flag,
     bucket2_full_no_main_employer_plan_flag =
@@ -1310,13 +1313,13 @@ memo_lines_chr <- c(
   paste0("- Any-match eligible AND currently hold a qualifying account: ",
          round(overall_tbl$bucket1_any_and_owns_weighted_n / 1e6, 1),
          " million workers (superset of Bucket 3; includes phaseout-range owners who are not in Bucket 2)."),
-  paste0("- Any-match eligible AND report NO retirement plan through their main employer/business: ",
+  paste0("- Any-match eligible AND may not have an employer-provided retirement plan through their main employer/business: ",
          round(overall_tbl$bucket1_no_main_employer_plan_weighted_n / 1e6, 1),
          " million workers."),
-  paste0("- Full-match eligible AND report NO retirement plan through their main employer/business: ",
+  paste0("- Full-match eligible AND may not have an employer-provided retirement plan through their main employer/business: ",
          round(overall_tbl$bucket2_no_main_employer_plan_weighted_n / 1e6, 1),
          " million workers."),
-  paste0("- Phaseout-range eligible AND report NO retirement plan through their main employer/business: ",
+  paste0("- Phaseout-range eligible AND may not have an employer-provided retirement plan through their main employer/business: ",
          round(
            (overall_tbl$bucket1_no_main_employer_plan_weighted_n -
               overall_tbl$bucket2_no_main_employer_plan_weighted_n) / 1e6,
@@ -1324,7 +1327,7 @@ memo_lines_chr <- c(
          ),
          " million workers."),
   "",
-  "Employer-plan-access note: this addition uses EMJOB_401 / EMJOB_IRA / EMJOB_PEN and is distinct from the ownership-based qualifying-account measure above. It captures retirement plans provided through the respondent's main employer or business during the reference period.",
+  "Employer-plan-access note: this addition is distinct from the ownership-based qualifying-account measure above. It uses EPENSNYN (whether the main employer/business had any retirement plan) together with EINCPENS (whether the worker was included in the offered plan(s)). Workers are counted in the no-plan group when the employer had no plan at all or when a plan existed but the worker was not included.",
   "",
   "## Filer-basis comparison to EBRI (U5)",
   "",
