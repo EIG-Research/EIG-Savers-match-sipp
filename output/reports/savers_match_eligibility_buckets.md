@@ -1,6 +1,6 @@
 # Saver's Match Eligible Population: Three-Bucket Estimate
 
-_Generated: 2026-04-21_
+_Generated: 2026-04-22_
 
 ## Headline (overall, worker-level, SIPP 2024, 2027-projected thresholds)
 
