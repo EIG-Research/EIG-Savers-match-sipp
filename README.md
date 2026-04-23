@@ -11,9 +11,7 @@ Estimates of the population eligible for the Saver's Match under SECURE 2.0 (IRC
 
 2. **Access gap analysis** — of the any-match eligible population (B1), how many already hold a qualifying account vs. how many would need to open one (B1 without account)
 
-3. **Main-employer plan access layer** — of the eligible worker population, how many explicitly report no retirement plan through their main employer or business during the reference period
-
-4. **Filer-basis comparison** — collapses each resolved MFJ couple to one filer for direct comparison against EBRI Copeland (2024) anchors (83.8M / 69.0M / 21.9M)
+3. **Filer-basis comparison** — collapses each resolved MFJ couple to one filer for direct comparison against EBRI Copeland (2024) anchors (83.8M / 69.0M / 21.9M)
 
 ## Data required
 
@@ -42,7 +40,7 @@ The pipeline skips Step 1 automatically if `pu2024_expanded.csv` already exists.
 
 | File | Location | Description |
 |---|---|---|
-| `savers_match_eligibility_buckets.rds` | `output/tables/` | Overall + by filing status + by age band (worker basis), including ownership and main-employer-access additions |
+| `savers_match_eligibility_buckets.rds` | `output/tables/` | Overall + by filing status + by age band (worker basis) |
 | `savers_match_eligibility_buckets.parquet` | `output/tables/` | Same as above, parquet format |
 | `savers_match_eligibility_buckets_filerbasis.rds` | `output/tables/` | Filer-basis counts for EBRI comparison |
 | `savers_match_filer_vs_ebri.rds` | `output/tables/` | SIPP filer counts vs. EBRI 83.8M / 69.0M / 21.9M anchors |
@@ -56,7 +54,6 @@ The pipeline skips Step 1 automatically if `pu2024_expanded.csv` already exists.
 - **CPI projection factor**: 1.0 (IRC sec 6433(h)(1) COLA first applies to TY2028+; 2027 uses statutory thresholds as written).
 - **Student / dependent exclusions**: IRC sec 25B cross-references apply; RENROLL + EEDFTPT are the primary student flags with an age/education/earnings fallback.
 - **Account qualification**: SIPP `EOWN_THR401 == 1` (has 401k/403b) or `EOWN_IRAKEO == 1` (has IRA/Keogh). DB pensions excluded.
-- **Main-employer plan access**: the additive “may not have an employer-provided retirement plan” layer uses SIPP `EPENSNYN` (whether the main employer or business had any retirement plan for anyone in the company or organization) together with `EINCPENS` (whether the respondent was included in the offered plan(s)). A worker is counted in the no-plan group when `EPENSNYN == 2` or `EINCPENS == 2`; unresolved patterns remain outside the no-plan count.
 
 ## Income thresholds (2027, no COLA adjustment)
 
