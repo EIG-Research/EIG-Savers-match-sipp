@@ -165,7 +165,7 @@ target_vars_chr <- c(existing_vars_chr, new_vars_chr)
 ###   1) Validate variable availability  ###
 ###########################################
 # Read a 0-row header from the .dta to enumerate columns without loading the
-# full ~2GB file. Fail fast (and informatively) before the expensive read if
+# full ~3 GB file. Fail fast (and informatively) before the expensive read if
 # any target variable is misnamed or absent from this SIPP wave.
 
 message("Inspecting variable list in: ", sipp_dta_path_chr)
