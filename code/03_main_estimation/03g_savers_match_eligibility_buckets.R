@@ -28,11 +28,17 @@
 #   - Dependent-proxy qualifying-relative gross-income threshold (currently 5050)
 #   - MFJ earned-income rule for Bucket 1
 #   - Whether to also report household-level counts
-#   - Income-period handling: SIPP TPTOTINC / TFTOTINC are MONTHLY reference-month
-#     values; we multiply by 12 to compare against the annual AGI thresholds in
-#     sm_lower / sm_upper. Dec x 12 is a proxy for calendar-year AGI. Consider
-#     substituting a calendar-year income aggregate if SIPP 2024 exposes one for
-#     in-sample-all-year workers.
+#   - Income-period handling: RESOLVED 2026-04-24 (Option B). TPTOTINC /
+#     TFTOTINC / TPEARN in SIPP are MONTHLY reference-month values. The
+#     previous implementation approximated calendar-year values as
+#     Dec x 12. We now aggregate across all observed MONTHCODE rows in
+#     the person-year block (sum of monthly values scaled to 12 months
+#     via sum * 12 / n_valid_months) and carry the annual columns onto
+#     the December reference-month record. Retirement-module attributes
+#     (EOWN_*, EMJOB_*, EPENSNYN, EINCPENS) remain on December. Option B
+#     means partial-year respondents (n_valid < 12) are still scaled to
+#     a 12-month basis; restrict_to_full_year_flag in the script body
+#     toggles a Option-C sensitivity that drops partial-year records.
 #   - MFJ filing-unit vs. family income: resolved 2026-04-19 via U1 (plan
 #     2026-04-19 Section 4). MFJ joint income is now the spouse-pair sum of
 #     TPTOTINC via an EPNSPOUSE self-join, not TFTOTINC. Open sub-items:
@@ -54,12 +60,13 @@
 #     8.9).
 #   - Filer-basis reaggregation (U5): staged 2026-04-19. Each MFJ couple
 #     now contributes one filer via the lower-PNUM-of-pair convention;
-#     see the "U5" block after the person-level aggregation. Three new
-#     outputs: savers_match_eligibility_buckets_filerbasis.{rds,parquet}
-#     and savers_match_filer_vs_ebri.{rds,parquet}. Remaining caveat:
-#     Bucket 3 on a filer basis is a LOWER BOUND because the U1 self-join
-#     does not carry spouse account-ownership flags; closing this gap
-#     requires extending the U1 self-join in a future pass.
+#     see the "U5" block after the person-level aggregation. Outputs:
+#     savers_match_eligibility_buckets_filerbasis.{rds,parquet} and the
+#     CPS-anchored savers_match_workers_vs_cps.{rds,parquet} (PRIMARY)
+#     and savers_match_filers_vs_cps.{rds,parquet} (secondary). Remaining
+#     caveat: Bucket 3 on a filer basis is a LOWER BOUND because the U1
+#     self-join does not carry spouse account-ownership flags; closing
+#     this gap requires extending the U1 self-join in a future pass.
 
 rm(list = ls())
 options(scipen = 999)
@@ -277,18 +284,144 @@ sipp_raw_tbl <- tryCatch(
 
 message("Raw rows read: ", nrow(sipp_raw_tbl))
 
-# Restrict to December reference month (retirement items are collected in December).
+###################################################################################
+###        Person-Year Income Aggregation (Option B: Observed-Months)           ###
+###################################################################################
+# Replaces the prior Dec x 12 proxy for calendar-year income. For each person,
+# aggregate TPTOTINC, TFTOTINC, and TPEARN across all observed MONTHCODE rows
+# (1..12), then scale the sum to a 12-month basis via
+# (sum_observed * 12 / n_valid_months). For the typical SIPP respondent
+# observed all 12 months, n_valid = 12 and the result is the measured
+# calendar-year total with no further proxy.
+#
+# Why this dominates the prior Dec x 12 annualization:
+#   1. For all-12-month respondents the quantity is measured, not extrapolated.
+#      Dec x 12 requires flat monthly earnings to be unbiased; sum-over-months
+#      does not.
+#   2. Classical measurement error in one month enters the sum with variance
+#      n * sigma^2 rather than 144 * sigma^2 under single-month scale-up, so
+#      the new annual value is substantially less noisy.
+#   3. Persons with zero December earnings but nonzero earnings earlier in
+#      the year (mid-year job leavers, retirees, new UI recipients) are no
+#      longer silently excluded via has_earned_income_flag = FALSE.
+#
+# Option B partial-year caveat: if a respondent is observed for only
+# n_valid < 12 months, the 12 / n_valid scale-up assumes the observed
+# months are representative of the unobserved months. This is wrong for
+# seasonal workers and for mid-year entrants/exiters, and less wrong than
+# Dec x 12 for the common case of a respondent with smooth earnings. A
+# full-year restriction (n_valid == 12L) is available as a sensitivity
+# toggle via restrict_to_full_year_flag below.
+#
+# Retirement-module attributes (EOWN_*, EMJOB_*, EPENSNYN, EINCPENS),
+# enrollment, dependency proxy, filing status, age, and the person weight
+# WPFINWGT all remain on the December reference-month record; only the
+# income and earnings aggregates are recomputed here.
+
+# Sensitivity toggle: restrict to respondents observed for all 12 months.
+# Default FALSE (Option B as selected). Flip to TRUE for a Option-C
+# sensitivity that drops partial-year respondents instead of scaling them.
+restrict_to_full_year_flag <- FALSE
+
+sipp_person_year_tbl <- sipp_raw_tbl |>
+  dplyr::group_by(SSUID, PNUM) |>
+  dplyr::summarise(
+    tptotinc_sum_num            = sum(TPTOTINC, na.rm = TRUE),
+    tftotinc_sum_num            = sum(TFTOTINC, na.rm = TRUE),
+    tpearn_sum_num              = sum(TPEARN,   na.rm = TRUE),
+    n_months_observed_int       = dplyr::n(),
+    n_months_tptotinc_valid_int = sum(!is.na(TPTOTINC)),
+    n_months_tftotinc_valid_int = sum(!is.na(TFTOTINC)),
+    n_months_tpearn_valid_int   = sum(!is.na(TPEARN)),
+    .groups = "drop"
+  ) |>
+  dplyr::mutate(
+    # Option B: observed-months annualization. Scale the sum of observed
+    # months up to a 12-month basis. Return NA_real_ if a person has zero
+    # valid months for a variable rather than forcing 0, which downstream
+    # comparisons would otherwise treat as a valid zero income.
+    tptotinc_annual_num = dplyr::if_else(
+      n_months_tptotinc_valid_int > 0L,
+      tptotinc_sum_num * 12 / n_months_tptotinc_valid_int,
+      NA_real_
+    ),
+    tftotinc_annual_num = dplyr::if_else(
+      n_months_tftotinc_valid_int > 0L,
+      tftotinc_sum_num * 12 / n_months_tftotinc_valid_int,
+      NA_real_
+    ),
+    tpearn_annual_num = dplyr::if_else(
+      n_months_tpearn_valid_int > 0L,
+      tpearn_sum_num * 12 / n_months_tpearn_valid_int,
+      NA_real_
+    )
+  )
+
+# Diagnostic: distribution of observed months across the sample. Full-year
+# respondents (n_months_observed_int == 12L) are the common case; partial-
+# year respondents are scaled up under Option B with the caveat above.
+months_observed_summary_tbl <- sipp_person_year_tbl |>
+  dplyr::count(n_months_observed_int, name = "n_persons") |>
+  dplyr::arrange(n_months_observed_int)
+message("Person-year aggregation: months-observed distribution")
+for (i in seq_len(nrow(months_observed_summary_tbl))) {
+  message(sprintf(
+    "  %2d months: %8d persons",
+    months_observed_summary_tbl$n_months_observed_int[i],
+    months_observed_summary_tbl$n_persons[i]
+  ))
+}
+
+n_partial_year_int <- sum(sipp_person_year_tbl$n_months_observed_int < 12L)
+message(sprintf(
+  "Partial-year respondents (< 12 months): %d of %d (%.2f%%)",
+  n_partial_year_int,
+  nrow(sipp_person_year_tbl),
+  100 * n_partial_year_int / nrow(sipp_person_year_tbl)
+))
+
+if (isTRUE(restrict_to_full_year_flag)) {
+  pre_rows_int <- nrow(sipp_person_year_tbl)
+  sipp_person_year_tbl <- sipp_person_year_tbl |>
+    dplyr::filter(n_months_observed_int == 12L)
+  message(sprintf(
+    "Option-C sensitivity active: dropped %d partial-year respondents (%d remain).",
+    pre_rows_int - nrow(sipp_person_year_tbl),
+    nrow(sipp_person_year_tbl)
+  ))
+}
+
+# Restrict to December reference month (retirement items are collected in
+# December) and attach the person-year annualized income and earnings columns.
 sipp_dec_tbl <- sipp_raw_tbl |>
-  dplyr::filter(MONTHCODE == 12L)
+  dplyr::filter(MONTHCODE == 12L) |>
+  dplyr::left_join(
+    sipp_person_year_tbl,
+    by = c("SSUID", "PNUM")
+  )
 
 message("Rows after December restriction: ", nrow(sipp_dec_tbl))
 
-# Defensive scale check on TPTOTINC / TFTOTINC.
-# If the expanded extract is ever rebuilt with already-annualized income,
-# the * 12 multiplier in the sm_income_num construction below would
-# double-annualize and silently inflate all phase-out comparisons by 12x.
-# Median monthly personal income is typically ~$3,000-$4,500; median monthly
-# family income is typically ~$5,000-$6,500. Error out if medians look annual.
+# Persons present for some months but absent from December exist in
+# sipp_person_year_tbl but will not appear in sipp_dec_tbl. Log the count so
+# the downstream universe-size story is auditable. Their annual income is
+# computable but they drop out of the bucket estimation because they have no
+# December filing status, retirement-ownership, or age record.
+n_persons_year_int <- nrow(sipp_person_year_tbl)
+n_persons_december_int <- nrow(sipp_dec_tbl)
+message(sprintf(
+  "Persons in year but missing December: %d (year: %d, December: %d)",
+  n_persons_year_int - n_persons_december_int,
+  n_persons_year_int,
+  n_persons_december_int
+))
+
+# Defensive scale check on TPTOTINC / TFTOTINC (monthly December values).
+# The person-year aggregation above sums monthly values; if the extract is
+# ever rebuilt with already-annualized income, the sum would 12x-compound
+# the annualization. Median monthly personal income is typically
+# ~$3,000-$4,500; median monthly family income is typically ~$5,000-$6,500.
+# Error out if medians look annual.
 tptotinc_median_num <- median(sipp_dec_tbl$TPTOTINC, na.rm = TRUE)
 tftotinc_median_num <- median(sipp_dec_tbl$TFTOTINC, na.rm = TRUE)
 message("TPTOTINC median (monthly-scale check): ", round(tptotinc_median_num, 0L))
@@ -297,8 +430,8 @@ if (!is.na(tptotinc_median_num) && tptotinc_median_num > 15000) {
   stop(
     "TPTOTINC median is ", tptotinc_median_num,
     " -- expected monthly scale (~$3,000-$4,500). ",
-    "If the extract is already annualized, remove the '* 12' in sm_income_num ",
-    "to avoid double-annualization.",
+    "If the extract is already annualized, the person-year aggregation ",
+    "above has 12x-compounded the annualization.",
     call. = FALSE
   )
 }
@@ -306,8 +439,37 @@ if (!is.na(tftotinc_median_num) && tftotinc_median_num > 20000) {
   stop(
     "TFTOTINC median is ", tftotinc_median_num,
     " -- expected monthly scale (~$5,000-$6,500). ",
-    "If the extract is already annualized, remove the '* 12' in sm_income_num ",
-    "to avoid double-annualization.",
+    "If the extract is already annualized, the person-year aggregation ",
+    "above has 12x-compounded the annualization.",
+    call. = FALSE
+  )
+}
+
+# Additional defensive check on the Option-B annual values produced above.
+# tptotinc_annual_num and tftotinc_annual_num should land in an annual
+# range (~$25,000-$80,000 medians including adults with low earnings).
+# Bounds are wide so the check only trips on clearly-wrong values.
+tptotinc_annual_median_num <- median(sipp_dec_tbl$tptotinc_annual_num, na.rm = TRUE)
+tftotinc_annual_median_num <- median(sipp_dec_tbl$tftotinc_annual_num, na.rm = TRUE)
+message("tptotinc_annual_num median (annual-scale check): ",
+        round(tptotinc_annual_median_num, 0L))
+message("tftotinc_annual_num median (annual-scale check): ",
+        round(tftotinc_annual_median_num, 0L))
+if (!is.na(tptotinc_annual_median_num) &&
+    (tptotinc_annual_median_num < 10000 || tptotinc_annual_median_num > 500000)) {
+  stop(
+    "tptotinc_annual_num median is ", round(tptotinc_annual_median_num, 0L),
+    " -- expected annual scale (~$25,000-$80,000). ",
+    "Verify the person-year aggregation block produced the expected scale.",
+    call. = FALSE
+  )
+}
+if (!is.na(tftotinc_annual_median_num) &&
+    (tftotinc_annual_median_num < 15000 || tftotinc_annual_median_num > 750000)) {
+  stop(
+    "tftotinc_annual_num median is ", round(tftotinc_annual_median_num, 0L),
+    " -- expected annual scale (~$50,000-$120,000). ",
+    "Verify the person-year aggregation block produced the expected scale.",
     call. = FALSE
   )
 }
@@ -336,19 +498,29 @@ if (!is.na(tftotinc_median_num) && tftotinc_median_num > 20000) {
 
 drop_imputed_spouse_pointers_flag <- FALSE  # open item; see plan 8.8
 
-# Build a per-person December lookup with the spouse's TPTOTINC, then left-join.
-# SSUID is a 15-digit numeric identifier and PNUM is a household-line number;
-# coerce both join keys to character on both sides to avoid any floating-point
-# precision drift before the join.
+# Build a per-person lookup carrying the spouse's ANNUAL TPTOTINC, then
+# left-join onto December records. SSUID is a 15-digit numeric identifier and
+# PNUM is a household-line number; coerce both join keys to character on both
+# sides to avoid any floating-point precision drift before the join.
+#
+# The spouse lookup is built from sipp_person_year_tbl rather than the
+# December-only table so that a spouse's annual income is available even
+# when the spouse is absent from the December reference row (partial-year
+# observation). The EPNSPOUSE pointer still comes from the reference
+# person's December record; only the spouse's annual income lookup is
+# broadened.
 sipp_dec_join_keys_tbl <- sipp_dec_tbl |>
   dplyr::mutate(
     SSUID_chr = as.character(SSUID),
     PNUM_chr  = as.character(PNUM)
   )
 
-spouse_lookup_tbl <- sipp_dec_join_keys_tbl |>
-  dplyr::select(SSUID_chr, PNUM_chr, TPTOTINC) |>
-  dplyr::rename(spouse_tptotinc_num = TPTOTINC)
+spouse_lookup_tbl <- sipp_person_year_tbl |>
+  dplyr::transmute(
+    SSUID_chr = as.character(SSUID),
+    PNUM_chr  = as.character(PNUM),
+    spouse_tptotinc_annual_num = tptotinc_annual_num
+  )
 
 sipp_dec_with_spouse_tbl <- sipp_dec_join_keys_tbl |>
   dplyr::mutate(
@@ -372,16 +544,16 @@ mfj_diag_tbl <- sipp_dec_with_spouse_tbl |>
   dplyr::mutate(filing_group_chr = make_filing_group(EFSTATUS)) |>
   dplyr::filter(filing_group_chr == "mfj") |>
   dplyr::summarise(
-    n_mfj_rows_int           = dplyr::n(),
-    n_epnspouse_missing_int  = sum(is.na(EPNSPOUSE)),
-    n_spouse_tptotinc_na_int = sum(is.na(spouse_tptotinc_num)),
-    n_apnspouse_imputed_int  = sum(!is.na(APNSPOUSE) & APNSPOUSE != 0L)
+    n_mfj_rows_int                  = dplyr::n(),
+    n_epnspouse_missing_int         = sum(is.na(EPNSPOUSE)),
+    n_spouse_tptotinc_annual_na_int = sum(is.na(spouse_tptotinc_annual_num)),
+    n_apnspouse_imputed_int         = sum(!is.na(APNSPOUSE) & APNSPOUSE != 0L)
   )
 message(
   "U1 MFJ spouse-join diagnostics:",
   " rows=", mfj_diag_tbl$n_mfj_rows_int,
   "; EPNSPOUSE missing=", mfj_diag_tbl$n_epnspouse_missing_int,
-  "; spouse TPTOTINC unresolved=", mfj_diag_tbl$n_spouse_tptotinc_na_int,
+  "; spouse annual TPTOTINC unresolved=", mfj_diag_tbl$n_spouse_tptotinc_annual_na_int,
   "; APNSPOUSE imputed=", mfj_diag_tbl$n_apnspouse_imputed_int
 )
 
@@ -389,13 +561,14 @@ message(
 if (isTRUE(drop_imputed_spouse_pointers_flag)) {
   sipp_dec_with_spouse_tbl <- sipp_dec_with_spouse_tbl |>
     dplyr::mutate(
-      spouse_tptotinc_num = dplyr::if_else(
+      spouse_tptotinc_annual_num = dplyr::if_else(
         is.na(APNSPOUSE) | APNSPOUSE == 0L,
-        spouse_tptotinc_num,
+        spouse_tptotinc_annual_num,
         NA_real_
       )
     )
-  message("U1 sensitivity: imputed APNSPOUSE pointers blanked (spouse_tptotinc_num set NA).")
+  message("U1 sensitivity: imputed APNSPOUSE pointers blanked ",
+          "(spouse_tptotinc_annual_num set NA).")
 }
 
 sipp_dec_tbl <- sipp_dec_with_spouse_tbl |>
@@ -483,20 +656,23 @@ message(
 sipp_derived_tbl <- sipp_dec_tbl |>
   dplyr::mutate(
     # 1) Filing group and income test value.
-    #    TPTOTINC is MONTHLY reference-month personal income in SIPP 2024;
-    #    spouse_tptotinc_num (from the U1 self-join above) is the spouse's
-    #    monthly TPTOTINC when filing_group_chr == "mfj". sm_lower / sm_upper
-    #    in calibration_cells.R are ANNUAL AGI thresholds from IRC sec 6433
-    #    (projected to 2027 via cpi_projection_factor_num). Multiply by 12 so
-    #    the bucket comparisons are on matching annual scales. Dec x 12 is a
-    #    proxy for calendar-year AGI; see OPEN ITEMS in header.
+    #    tptotinc_annual_num is the Option-B observed-months annualization
+    #    of TPTOTINC built in the person-year aggregation block above
+    #    (sum of observed monthly values scaled to 12 months). For the
+    #    typical all-12-months respondent this is the measured calendar-
+    #    year total. spouse_tptotinc_annual_num is the corresponding value
+    #    for the spouse, attached via the U1 self-join when
+    #    filing_group_chr == "mfj". sm_lower / sm_upper in
+    #    calibration_cells.R are ANNUAL AGI thresholds from IRC sec 6433
+    #    (projected to 2027 via cpi_projection_factor_num), so no * 12
+    #    scaling is applied here.
     #    MFJ fallback: when EPNSPOUSE is missing but EFSTATUS == 2, we use
-    #    TPTOTINC alone (single-filer proxy) so the row is not dropped from
-    #    the count; this is recorded in the diagnostic message above and
-    #    tracked as plan Section 3 row 3e.
+    #    tptotinc_annual_num alone (single-filer proxy) so the row is not
+    #    dropped from the count; this is recorded in the diagnostic above
+    #    and tracked as plan Section 3 row 3e.
     #
     #    U2 hook: sm_gross_income_num is the annualized gross income (U1
-    #    spouse-pair sum for MFJ; personal TPTOTINC * 12 otherwise).
+    #    spouse-pair sum for MFJ; personal tptotinc_annual_num otherwise).
     #    sm_income_num then subtracts agi_above_line_adjust_num to produce
     #    the AGI value actually compared against sm_lower / sm_upper. The
     #    adjustment is 0 in the current scaffold (see U2 block above), so
@@ -504,11 +680,11 @@ sipp_derived_tbl <- sipp_dec_tbl |>
     #    columns distinct so a future non-zero adjustment is visible.
     filing_group_chr = make_filing_group(EFSTATUS),
     sm_gross_income_num = dplyr::case_when(
-      filing_group_chr == "mfj" & !is.na(spouse_tptotinc_num) ~
-        (TPTOTINC + spouse_tptotinc_num) * 12,                         # U1: spouse-pair joint income, annualized
-      filing_group_chr == "mfj" & is.na(spouse_tptotinc_num) ~
-        TPTOTINC * 12,                                                 # U1 fallback: MFJ w/ unresolved spouse pointer
-      filing_group_chr %in% c("single_mfs", "hoh") ~ TPTOTINC * 12,    # personal income, annualized
+      filing_group_chr == "mfj" & !is.na(spouse_tptotinc_annual_num) ~
+        tptotinc_annual_num + spouse_tptotinc_annual_num,             # U1: spouse-pair joint annual income
+      filing_group_chr == "mfj" & is.na(spouse_tptotinc_annual_num) ~
+        tptotinc_annual_num,                                          # U1 fallback: MFJ w/ unresolved spouse pointer
+      filing_group_chr %in% c("single_mfs", "hoh") ~ tptotinc_annual_num,
       TRUE ~ NA_real_
     ),
     # sm_income_num is the AGI value actually compared against the sm_lower
@@ -532,8 +708,15 @@ sipp_derived_tbl <- sipp_dec_tbl |>
       TRUE ~ NA_real_
     ),
 
-    # 3) Earned-income flag (annualized personal earnings > 0)
-    personal_annual_earnings_num = TPEARN * 12,
+    # 3) Earned-income flag (Option-B observed-months-annualized personal
+    #    earnings > 0). tpearn_annual_num is the sum of observed monthly
+    #    TPEARN scaled to a 12-month basis (person-year aggregation block
+    #    above). Any positive earnings during the year qualifies the
+    #    respondent on the IRC sec 6433 earned-income requirement. This
+    #    is a behavior change from the prior Dec x 12 test, which silently
+    #    excluded anyone with zero December earnings (mid-year job leavers,
+    #    retirees with earnings earlier in the year, new UI recipients).
+    personal_annual_earnings_num = tpearn_annual_num,
     has_earned_income_flag = dplyr::case_when(
       is.na(personal_annual_earnings_num) ~ FALSE,
       personal_annual_earnings_num > 0    ~ TRUE,
@@ -782,21 +965,20 @@ results_tbl <- dplyr::bind_rows(overall_tbl, by_filing_tbl, by_age_tbl) |>
   )
 
 ###################################################################################
-###         U5: Filer-Basis Reaggregation for EBRI Benchmark Comparison         ###
+###       U5: Filer-Basis Reaggregation for Tax-Return-Basis Comparison         ###
 ###################################################################################
 # U5 (plan 2026-04-19 Section 4 / Section 8.6): the bucket counts computed above
 # are on a worker (person) basis — each adult in a married couple contributes
-# one observation. EBRI's Copeland (2024) Issue Brief No. 602 anchors (83.8M
-# any-match, 69.0M full-match, 21.9M full-match-with-account) are on a
-# tax-RETURN basis, so every MFJ couple contributes exactly ONE filer, not two.
-# To make the SIPP number directly comparable to the EBRI anchors, collapse
-# each resolved MFJ spouse-pair to a single "primary-of-pair" record.
+# one observation. The primary external anchor (CPS ASEC 2025, Phase 4 below)
+# is constructed on a tax-RETURN basis, where every MFJ couple contributes
+# exactly ONE filer, not two. To make the SIPP number directly comparable,
+# collapse each resolved MFJ spouse-pair to a single "primary-of-pair" record.
 #
 # Rule (disclosed per AS-3 undisclosed-assumptions check):
 #   1. For filing_group_chr in {"single_mfs", "hoh"}: every person is their
 #      own filer. Keep the row as-is.
 #   2. For filing_group_chr == "mfj" with a resolved spouse pointer
-#      (spouse_tptotinc_num is not NA): form a symmetric couple key
+#      (spouse_tptotinc_annual_num is not NA): form a symmetric couple key
 #      paste0(SSUID, "_", pmin(PNUM, EPNSPOUSE), "_", pmax(PNUM, EPNSPOUSE))
 #      and keep only the member with the LOWER PNUM. This is the
 #      reference-person-of-pair convention (deterministic; does not depend
@@ -817,14 +999,15 @@ results_tbl <- dplyr::bind_rows(overall_tbl, by_filing_tbl, by_age_tbl) |>
 #      sensitivity if the rate is material.
 #
 # Bucket 3 caveat (owns_qualifying_account_flag at the couple level):
-# The EBRI 21.9M anchor is "full-match-eligible filers where AT LEAST ONE
-# spouse owns a qualifying account." The current U1 self-join brings over
-# spouse TPTOTINC but not spouse account-ownership flags. So the filer-basis
-# Bucket 3 here uses only the kept member's own account flag. This is a
-# LOWER BOUND on the true couple-level Bucket 3 (couples where only the
-# dropped member owned the account are missed). Closing this gap requires
-# extending the U1 self-join to carry spouse EOWN_THR401 / EOWN_IRAKEO,
-# which is a small 01/03g edit but is out of scope for the 2026-04-19
+# A correct couple-level full-match-with-account count would treat a couple
+# as in-bucket if AT LEAST ONE spouse owns a qualifying account. The
+# current U1 self-join brings over spouse TPTOTINC but not spouse account-
+# ownership flags. So the filer-basis Bucket 3 here uses only the kept
+# member's own account flag. This is a LOWER BOUND on the true couple-
+# level Bucket 3 (couples where only the dropped member owned the account
+# are missed). Closing this gap requires extending the U1 self-join to
+# carry spouse EOWN_THR401 / EOWN_IRAKEO, which is a small 01/03g edit
+# but is out of scope for the 2026-04-19
 # pass. Documented in the memo output and flagged in the plan Section 4.
 
 # Build the primary-of-pair mask
@@ -832,9 +1015,9 @@ sm_universe_filer_tbl <- sm_universe_tbl |>
   dplyr::mutate(
     primary_of_pair_flag = dplyr::case_when(
       filing_group_chr %in% c("single_mfs", "hoh") ~ TRUE,
-      filing_group_chr == "mfj" & is.na(spouse_tptotinc_num) ~ TRUE,
+      filing_group_chr == "mfj" & is.na(spouse_tptotinc_annual_num) ~ TRUE,
       filing_group_chr == "mfj" &
-        !is.na(spouse_tptotinc_num) &
+        !is.na(spouse_tptotinc_annual_num) &
         !is.na(EPNSPOUSE) &
         PNUM < EPNSPOUSE ~ TRUE,
       TRUE ~ FALSE
@@ -849,7 +1032,7 @@ u5_mfj_kept_int <- sm_universe_filer_tbl |>
   nrow()
 u5_mfj_unresolved_int <- sm_universe_filer_tbl |>
   dplyr::filter(filing_group_chr == "mfj" &
-                  is.na(spouse_tptotinc_num)) |>
+                  is.na(spouse_tptotinc_annual_num)) |>
   nrow()
 
 message(
@@ -906,40 +1089,50 @@ filer_results_tbl <- dplyr::bind_rows(overall_filer_tbl, by_filing_filer_tbl) |>
     universe_millions = round(universe_weighted_n / 1e6, 2)
   )
 
-# EBRI Copeland (2024) anchors (filer basis, IRS SOI 2018).
-# Hard-coded here for side-by-side reporting only; not a threshold.
-ebri_any_match_millions_num    <- 83.8
-ebri_full_match_millions_num   <- 69.0
-ebri_full_and_owns_millions_num <- 21.9
+# Historical reference only (NOT used as a baseline anchor):
+#   EBRI Copeland (2024) Issue Brief No. 602 reports a filer-basis Saver's
+#   Match eligible population of 83.8M (any-match), 69.0M (full-match), and
+#   21.9M (full-match-with-account), built from IRS SOI 2018 tax return
+#   microdata. We do not anchor against these numbers because (a) the SOI
+#   2018 vintage predates the SECURE 2.0 statutory thresholds by five years
+#   with no inflation adjustment applied, and (b) the underlying filer
+#   population has shifted materially over that interval. The 2024
+#   Morningstar SCF estimate of ~27M eligible households is a different
+#   unit and also not comparable. The CPS ASEC 2025 cross-check (Phase 4
+#   below) is the primary external anchor for this pipeline.
+ebri_historical_any_match_millions_num     <- 83.8
+ebri_historical_full_match_millions_num    <- 69.0
+ebri_historical_full_and_owns_millions_num <- 21.9
 
-ebri_ratio_tbl <- overall_filer_tbl |>
+# SIPP filer-basis summary. CPS-comparison columns are populated after the
+# Phase 4 CPS ASEC 2025 block runs; before that, cps_*_millions are NA.
+sipp_filer_overall_tbl <- overall_filer_tbl |>
   dplyr::transmute(
     group_chr,
     subgroup_chr,
-    bucket1_millions = round(bucket1_weighted_n / 1e6, 2),
-    bucket2_millions = round(bucket2_weighted_n / 1e6, 2),
-    bucket3_millions = round(bucket3_weighted_n / 1e6, 2),
-    # B1 intersect ownership: reported in millions only; no EBRI anchor exists
-    # for this quantity (EBRI Copeland 2024 reports only B1, B2, and B3).
-    bucket1_any_and_owns_millions = round(bucket1_any_and_owns_weighted_n / 1e6, 2),
-    bucket1_pct_of_ebri = round(
-      100 * (bucket1_weighted_n / 1e6) / ebri_any_match_millions_num, 1L),
-    bucket2_pct_of_ebri = round(
-      100 * (bucket2_weighted_n / 1e6) / ebri_full_match_millions_num, 1L),
-    bucket3_pct_of_ebri = round(
-      100 * (bucket3_weighted_n / 1e6) / ebri_full_and_owns_millions_num, 1L)
+    bucket1_millions              = round(bucket1_weighted_n / 1e6, 2),
+    bucket2_millions              = round(bucket2_weighted_n / 1e6, 2),
+    bucket3_millions              = round(bucket3_weighted_n / 1e6, 2),
+    # B1 intersect ownership: reported in millions only; CPS ADJGINC has
+    # no parallel quantity because the ASEC core file does not carry
+    # retirement-account ownership flags.
+    bucket1_any_and_owns_millions = round(bucket1_any_and_owns_weighted_n / 1e6, 2)
   )
 
+# Top-level CPS scalars. Populated by Phase 4 below; remain NA if the
+# Phase 4 block is gated off or otherwise skipped. Worker-basis is the
+# primary comparison unit; filer-basis is kept as a secondary reference.
+cps_b1_workers_millions_num <- NA_real_
+cps_b2_workers_millions_num <- NA_real_
+cps_b1_filers_millions_num  <- NA_real_
+cps_b2_filers_millions_num  <- NA_real_
+
 message(
-  "U5 filer-basis overall (millions):",
-  " B1=", ebri_ratio_tbl$bucket1_millions,
-  " (", ebri_ratio_tbl$bucket1_pct_of_ebri, "% of EBRI 83.8M);",
-  " B2=", ebri_ratio_tbl$bucket2_millions,
-  " (", ebri_ratio_tbl$bucket2_pct_of_ebri, "% of EBRI 69.0M);",
-  " B3=", ebri_ratio_tbl$bucket3_millions,
-  " (", ebri_ratio_tbl$bucket3_pct_of_ebri, "% of EBRI 21.9M);",
-  " B1 \u2229 account=", ebri_ratio_tbl$bucket1_any_and_owns_millions,
-  "M (no EBRI anchor)"
+  "U5 filer-basis overall (millions, SIPP, pre-CPS comparison):",
+  " B1=", sipp_filer_overall_tbl$bucket1_millions,
+  "; B2=", sipp_filer_overall_tbl$bucket2_millions,
+  "; B3=", sipp_filer_overall_tbl$bucket3_millions,
+  "; B1 \u2229 account=", sipp_filer_overall_tbl$bucket1_any_and_owns_millions
 )
 
 ###################################################################################
@@ -973,11 +1166,12 @@ message("Overall Bucket 3 (full + owns, millions): ",
 message("Overall B1 intersect account (any-match + owns, millions): ",
         overall_tbl$bucket1_any_and_owns_weighted_n / 1e6)
 
-# External benchmark comparison (informational -- different units)
-message("External benchmarks (different units; compare qualitatively):")
-message("  EBRI (Copeland 2024, filers, IRS SOI 2018):")
-message("    any-match 83.8M | full-match 69.0M | full+owns 21.9M")
-message("  Morningstar (Jan 2025, households, SCF 2022): ~27M eligible")
+# External anchor: CPS ASEC 2025 (income year 2024). Phase 4 below
+# produces the comparable filer-basis CPS counts on the same SECURE 2.0
+# bucket rules. EBRI Copeland 2024 and Morningstar SCF 2022 are
+# documented as historical references in the constants block above; we
+# do not baseline against them.
+message("Primary external anchor: CPS ASEC 2025 (Phase 4 below).")
 
 ###################################################################################
 ###      Phase 4: CPS ASEC 2025 Inline Validation (gated; default off)          ###
@@ -1051,13 +1245,18 @@ if (run_cps_validation_flag) {
     dir.create(cps_cache_dir_chr, recursive = TRUE)
   }
 
-  # Variables needed to apply the Saver's Match bucket rules on CPS ASEC
+  # Variables needed to apply the Saver's Match bucket rules on CPS ASEC.
+  # INCBUS and INCFARM are needed for the IRC sec 32 / sec 6433 earned-
+  # income concept (wages plus self-employment business plus self-
+  # employment farm). Adding these two requires re-pulling the IPUMS
+  # extract; an extract built without them will fail at the filter step
+  # because the variables will be absent from the DDI.
   cps_vars_chr <- c(
     "YEAR", "MONTH", "SERIAL", "PERNUM",
     "SPLOC", "RELATE",
     "AGE", "SEX", "MARST",
     "FILESTAT", "DEPSTAT", "SCHLCOLL",
-    "INCTOT", "ADJGINC", "INCWAGE",
+    "INCTOT", "ADJGINC", "INCWAGE", "INCBUS", "INCFARM",
     "ASECWT"
   )
 
@@ -1109,6 +1308,49 @@ if (run_cps_validation_flag) {
 
   message("CPS ASEC 2025 rows read: ", nrow(cps_raw_tbl))
 
+  # CPS U1 (parallel to the SIPP U1 spouse self-join): for MFJ persons,
+  # the IRC sec 6433 income test is on JOINT AGI, not own AGI. ADJGINC in
+  # CPS ASEC is per-person, so testing each MFJ spouse's own ADJGINC
+  # against the MFJ threshold is wrong (and inflates the bucket counts
+  # because per-person ADJGINC is by construction <= joint ADJGINC, so
+  # more MFJ persons clear the threshold individually than would clear it
+  # jointly). Build a person-level lookup keyed on (SERIAL, PERNUM),
+  # then left-join onto cps_raw_tbl by (SERIAL, SPLOC = PERNUM) so each
+  # row gains the spouse's ADJGINC. SPLOC is the within-household pointer
+  # to the spouse's PERNUM; it is 0 (or NA) when the person has no
+  # in-household spouse.
+  cps_spouse_lookup_tbl <- cps_raw_tbl |>
+    dplyr::transmute(
+      SERIAL,
+      spouse_pernum_int  = PERNUM,
+      spouse_adjginc_num = ADJGINC
+    )
+
+  cps_with_spouse_tbl <- cps_raw_tbl |>
+    dplyr::left_join(
+      cps_spouse_lookup_tbl,
+      by = c("SERIAL" = "SERIAL", "SPLOC" = "spouse_pernum_int"),
+      relationship = "many-to-one"
+    )
+
+  # Diagnostic: how many CPS MFJ rows have an unresolved SPLOC pointer?
+  # Mirrors the SIPP U1 MFJ diagnostic. Filer-basis MFJ rows with
+  # unresolved pointers fall back to own ADJGINC (single-filer proxy on
+  # the joint test), which is conservative.
+  cps_u1_diag_tbl <- cps_with_spouse_tbl |>
+    dplyr::filter(FILESTAT == 1L) |>
+    dplyr::summarise(
+      n_mfj_rows_int               = dplyr::n(),
+      n_sploc_zero_int             = sum(is.na(SPLOC) | SPLOC == 0L),
+      n_spouse_adjginc_unresolved  = sum(is.na(spouse_adjginc_num))
+    )
+  message(
+    "CPS U1 MFJ spouse-join diagnostics:",
+    " rows=", cps_u1_diag_tbl$n_mfj_rows_int,
+    "; SPLOC missing or zero=", cps_u1_diag_tbl$n_sploc_zero_int,
+    "; spouse ADJGINC unresolved=", cps_u1_diag_tbl$n_spouse_adjginc_unresolved
+  )
+
   # Parallel bucket logic.
   # FILESTAT IPUMS codes: 1 = Joint (MFJ); 2 = Separate (MFS);
   # 3 = Head of household; 4 = Single; 5 = Surviving spouse; 6 = Nonfiler.
@@ -1122,13 +1364,21 @@ if (run_cps_validation_flag) {
   #   3 = College FT, 4 = College PT. Full-time student flag fires when
   #   SCHLCOLL %in% c(1, 3).
 
-  cps_universe_tbl <- cps_raw_tbl |>
+  cps_universe_tbl <- cps_with_spouse_tbl |>
     dplyr::filter(
       AGE >= 18L,
       DEPSTAT == 0L,
       !(SCHLCOLL %in% c(1L, 3L)),
       FILESTAT %in% c(1L, 2L, 3L, 4L, 5L),
-      INCWAGE > 0L | INCTOT > 0L
+      # IRC sec 32 / sec 6433 earned-income concept: wages plus self-
+      # employment income (business or farm). Replaces the prior loose
+      # `INCWAGE > 0 | INCTOT > 0` test, which let pension- and Social-
+      # Security-only retirees clear the universe filter even though they
+      # have no earned income and are not Saver's Match eligible. Applied
+      # per-person, which makes this the de facto MFJ own-earnings rule on
+      # CPS: each MFJ spouse must individually have earned income to enter
+      # the universe, mirroring the SIPP `has_earned_income_flag` filter.
+      INCWAGE > 0L | INCBUS > 0L | INCFARM > 0L
     ) |>
     dplyr::mutate(
       filing_group_chr = dplyr::case_when(
@@ -1137,9 +1387,21 @@ if (run_cps_validation_flag) {
         FILESTAT %in% c(2L, 4L, 5L) ~ "single_mfs",
         TRUE ~ NA_character_
       ),
-      # ADJGINC is an AGI-concept variable from IPUMS -- no gross-vs-AGI
-      # adjustment needed. Use directly as sm_income_num equivalent.
-      sm_income_cps_num = ADJGINC,
+      # ADJGINC is an AGI-concept variable from IPUMS, recorded per
+      # person. For MFJ filers, the Saver's Match income test is on
+      # JOINT AGI (sum of both spouses' contributions), so we add the
+      # spouse_adjginc_num pulled in via the CPS U1 self-join above.
+      # For MFJ rows with unresolved SPLOC, fall back to own ADJGINC --
+      # conservative because joint income would be at least as large.
+      # For non-MFJ persons (single, MFS, HoH), use own ADJGINC.
+      sm_income_cps_num = dplyr::case_when(
+        filing_group_chr == "mfj" & !is.na(spouse_adjginc_num) ~
+          ADJGINC + spouse_adjginc_num,
+        filing_group_chr == "mfj" & is.na(spouse_adjginc_num) ~
+          ADJGINC,                                              # MFJ unresolved-SPLOC fallback
+        filing_group_chr %in% c("single_mfs", "hoh") ~ ADJGINC,
+        TRUE ~ NA_real_
+      ),
       # Threshold lookups mirror the SIPP construction at lines ~520-531.
       # Reuse the same named sm_lower/sm_upper numeric vectors and the
       # same cpi_projection_factor_num scalar so the CPS universe is
@@ -1171,9 +1433,53 @@ if (run_cps_validation_flag) {
       # default ASEC file. Bucket 3 is omitted from the CPS comparison.
     )
 
-  # Collapse MFJ to one filer per couple using SPLOC (analogous to the
-  # SIPP EPNSPOUSE convention): keep the lower PERNUM when SPLOC > 0 and
-  # within the same SERIAL.
+  # Diagnostic: median sm_income_cps_num by filing_group, plus weighted
+  # bucket-1 counts split MFJ vs. non-MFJ. If the U1 spouse-join is
+  # populating joint income for MFJ, the MFJ median should land near the
+  # MFJ joint-income population median (~$80,000-$100,000), not near the
+  # MFJ individual income median (~$40,000-$50,000).
+  cps_phase4_diag_tbl <- cps_universe_tbl |>
+    dplyr::group_by(filing_group_chr) |>
+    dplyr::summarise(
+      n_rows                         = dplyr::n(),
+      median_sm_income_cps_num       = stats::median(sm_income_cps_num, na.rm = TRUE),
+      median_own_adjginc             = stats::median(ADJGINC, na.rm = TRUE),
+      n_with_spouse_resolved         = sum(!is.na(spouse_adjginc_num)),
+      weighted_b1_millions           = round(
+        sum(ASECWT * bucket1_any_match_flag, na.rm = TRUE) / 1e6, 3),
+      weighted_b2_millions           = round(
+        sum(ASECWT * bucket2_full_match_flag, na.rm = TRUE) / 1e6, 3),
+      .groups = "drop"
+    )
+  message("CPS Phase 4 sanity diagnostic by filing group:")
+  for (i in seq_len(nrow(cps_phase4_diag_tbl))) {
+    message(sprintf(
+      "  fg=%s  n=%d  median(sm_income)=%d  median(own ADJGINC)=%d  spouse-resolved=%d  B1=%.3fM  B2=%.3fM",
+      cps_phase4_diag_tbl$filing_group_chr[i],
+      cps_phase4_diag_tbl$n_rows[i],
+      as.integer(cps_phase4_diag_tbl$median_sm_income_cps_num[i]),
+      as.integer(cps_phase4_diag_tbl$median_own_adjginc[i]),
+      cps_phase4_diag_tbl$n_with_spouse_resolved[i],
+      cps_phase4_diag_tbl$weighted_b1_millions[i],
+      cps_phase4_diag_tbl$weighted_b2_millions[i]
+    ))
+  }
+
+  # Worker-basis CPS counts (PRIMARY). Each adult in an MFJ couple is
+  # counted separately, mirroring the SIPP worker-level overall_tbl.
+  # No primary-of-pair collapse is applied; we sum bucket flags directly
+  # over cps_universe_tbl (the post-universe-filter person-level frame).
+  cps_universe_counts_tbl <- cps_universe_tbl |>
+    dplyr::summarise(
+      cps_b1_workers_millions = round(
+        sum(ASECWT * bucket1_any_match_flag,  na.rm = TRUE) / 1e6, 2),
+      cps_b2_workers_millions = round(
+        sum(ASECWT * bucket2_full_match_flag, na.rm = TRUE) / 1e6, 2)
+    )
+
+  # Filer-basis CPS counts (SECONDARY, kept for reference). Each MFJ couple
+  # is collapsed to one filer via SPLOC: keep the member with PERNUM < SPLOC
+  # within the same SERIAL household. Mirrors the SIPP U5 filer collapse.
   cps_filer_tbl <- cps_universe_tbl |>
     dplyr::mutate(
       primary_of_pair_flag = dplyr::case_when(
@@ -1187,33 +1493,79 @@ if (run_cps_validation_flag) {
 
   cps_filer_counts_tbl <- cps_filer_tbl |>
     dplyr::summarise(
-      cps_b1_millions = round(
+      cps_b1_filers_millions = round(
         sum(ASECWT * bucket1_any_match_flag,  na.rm = TRUE) / 1e6, 2),
-      cps_b2_millions = round(
+      cps_b2_filers_millions = round(
         sum(ASECWT * bucket2_full_match_flag, na.rm = TRUE) / 1e6, 2)
     )
 
-  # Comparison table (Overall row only for this first pass)
+  # Diagnostic on filer-basis post-collapse: median sm_income_cps_num and
+  # weighted bucket counts by filing group, parallel to the universe-level
+  # diagnostic above. If the joint-income fix is reaching the filer table,
+  # the MFJ median here should also be the joint-income median.
+  cps_filer_diag_tbl <- cps_filer_tbl |>
+    dplyr::group_by(filing_group_chr) |>
+    dplyr::summarise(
+      n_rows                   = dplyr::n(),
+      median_sm_income_cps_num = stats::median(sm_income_cps_num, na.rm = TRUE),
+      weighted_b1_millions     = round(
+        sum(ASECWT * bucket1_any_match_flag, na.rm = TRUE) / 1e6, 3),
+      weighted_b2_millions     = round(
+        sum(ASECWT * bucket2_full_match_flag, na.rm = TRUE) / 1e6, 3),
+      .groups = "drop"
+    )
+  message("CPS Phase 4 filer-basis diagnostic by filing group:")
+  for (i in seq_len(nrow(cps_filer_diag_tbl))) {
+    message(sprintf(
+      "  fg=%s  n=%d  median(sm_income)=%d  B1=%.3fM  B2=%.3fM",
+      cps_filer_diag_tbl$filing_group_chr[i],
+      cps_filer_diag_tbl$n_rows[i],
+      as.integer(cps_filer_diag_tbl$median_sm_income_cps_num[i]),
+      cps_filer_diag_tbl$weighted_b1_millions[i],
+      cps_filer_diag_tbl$weighted_b2_millions[i]
+    ))
+  }
+
+  # Surface CPS scalars at top-level scope so the post-Phase-4 ratio
+  # tables and the memo can read them whether or not Phase 4 is gated on.
+  # Worker-basis is primary; filer-basis is kept for reference.
+  cps_b1_workers_millions_num <- cps_universe_counts_tbl$cps_b1_workers_millions
+  cps_b2_workers_millions_num <- cps_universe_counts_tbl$cps_b2_workers_millions
+  cps_b1_filers_millions_num  <- cps_filer_counts_tbl$cps_b1_filers_millions
+  cps_b2_filers_millions_num  <- cps_filer_counts_tbl$cps_b2_filers_millions
+
+  # Validation table carrying both worker-basis (primary) and filer-basis
+  # (secondary) comparisons. Income-year mismatch noted in scope_chr:
+  # SIPP 2024 Wave 1 covers reference year 2023; CPS ASEC 2025 covers
+  # income year 2024. The SIPP figure will lift when SIPP 2025 Wave 2
+  # releases.
   savers_match_cps_vs_sipp_tbl <- tibble::tibble(
-    scope_chr        = "Overall, filer basis, income year 2024",
-    sipp_b1_millions = ebri_ratio_tbl$bucket1_millions,
-    sipp_b2_millions = ebri_ratio_tbl$bucket2_millions,
-    cps_b1_millions  = cps_filer_counts_tbl$cps_b1_millions,
-    cps_b2_millions  = cps_filer_counts_tbl$cps_b2_millions,
-    ebri_b1_millions = ebri_any_match_millions_num,
-    ebri_b2_millions = ebri_full_match_millions_num,
-    cps_vs_sipp_b1_ratio = round(
-      cps_filer_counts_tbl$cps_b1_millions /
-        ebri_ratio_tbl$bucket1_millions, 3L),
-    cps_vs_sipp_b2_ratio = round(
-      cps_filer_counts_tbl$cps_b2_millions /
-        ebri_ratio_tbl$bucket2_millions, 3L),
-    cps_vs_ebri_b1_ratio = round(
-      cps_filer_counts_tbl$cps_b1_millions /
-        ebri_any_match_millions_num, 3L),
-    cps_vs_ebri_b2_ratio = round(
-      cps_filer_counts_tbl$cps_b2_millions /
-        ebri_full_match_millions_num, 3L)
+    scope_chr        = paste0(
+      "Overall. SIPP reference year 2023 (Wave 1); ",
+      "CPS ASEC 2025 income year 2024."
+    ),
+    # Worker basis (primary)
+    sipp_b1_workers_millions = round(overall_tbl$bucket1_weighted_n / 1e6, 2),
+    sipp_b2_workers_millions = round(overall_tbl$bucket2_weighted_n / 1e6, 2),
+    cps_b1_workers_millions  = cps_b1_workers_millions_num,
+    cps_b2_workers_millions  = cps_b2_workers_millions_num,
+    sipp_pct_of_cps_workers_b1 = round(
+      100 * (overall_tbl$bucket1_weighted_n / 1e6) /
+        cps_b1_workers_millions_num, 1),
+    sipp_pct_of_cps_workers_b2 = round(
+      100 * (overall_tbl$bucket2_weighted_n / 1e6) /
+        cps_b2_workers_millions_num, 1),
+    # Filer basis (secondary)
+    sipp_b1_filers_millions = sipp_filer_overall_tbl$bucket1_millions,
+    sipp_b2_filers_millions = sipp_filer_overall_tbl$bucket2_millions,
+    cps_b1_filers_millions  = cps_b1_filers_millions_num,
+    cps_b2_filers_millions  = cps_b2_filers_millions_num,
+    sipp_pct_of_cps_filers_b1 = round(
+      100 * sipp_filer_overall_tbl$bucket1_millions /
+        cps_b1_filers_millions_num, 1),
+    sipp_pct_of_cps_filers_b2 = round(
+      100 * sipp_filer_overall_tbl$bucket2_millions /
+        cps_b2_filers_millions_num, 1)
   )
 
   saveRDS(
@@ -1227,20 +1579,91 @@ if (run_cps_validation_flag) {
   )
 
   message(
-    "Phase 4 CPS validation complete. Overall filer-basis counts:",
-    " SIPP B1=", ebri_ratio_tbl$bucket1_millions,
-    "M; CPS B1=", cps_filer_counts_tbl$cps_b1_millions,
-    "M; EBRI B1=", ebri_any_match_millions_num, "M.",
-    " SIPP B2=", ebri_ratio_tbl$bucket2_millions,
-    "M; CPS B2=", cps_filer_counts_tbl$cps_b2_millions,
-    "M; EBRI B2=", ebri_full_match_millions_num, "M."
+    "Phase 4 CPS validation complete. Worker-basis counts (PRIMARY):",
+    " SIPP B1=", round(overall_tbl$bucket1_weighted_n / 1e6, 2),
+    "M; CPS B1=", cps_b1_workers_millions_num,
+    "M (SIPP is ", savers_match_cps_vs_sipp_tbl$sipp_pct_of_cps_workers_b1,
+    "% of CPS).",
+    " SIPP B2=", round(overall_tbl$bucket2_weighted_n / 1e6, 2),
+    "M; CPS B2=", cps_b2_workers_millions_num,
+    "M (SIPP is ", savers_match_cps_vs_sipp_tbl$sipp_pct_of_cps_workers_b2,
+    "% of CPS)."
+  )
+  message(
+    "Filer-basis counts (secondary):",
+    " SIPP B1=", sipp_filer_overall_tbl$bucket1_millions,
+    "M; CPS B1=", cps_b1_filers_millions_num,
+    "M (SIPP is ", savers_match_cps_vs_sipp_tbl$sipp_pct_of_cps_filers_b1,
+    "% of CPS).",
+    " SIPP B2=", sipp_filer_overall_tbl$bucket2_millions,
+    "M; CPS B2=", cps_b2_filers_millions_num,
+    "M (SIPP is ", savers_match_cps_vs_sipp_tbl$sipp_pct_of_cps_filers_b2,
+    "% of CPS)."
   )
 
 } else {
 
-  message("Phase 4 CPS validation skipped (run_cps_validation_flag is FALSE).")
+  message("Phase 4 CPS validation skipped (run_cps_validation_flag is FALSE). ",
+          "CPS-based ratio columns will be NA in the comparison tables.")
 
 }
+
+###################################################################################
+###          CPS-Anchored Comparison Tables (post Phase 4)                      ###
+###################################################################################
+# Built after Phase 4 so cps_b*_millions_num scalars are populated. Two
+# tables: worker basis (PRIMARY) and filer basis (SECONDARY). Columns are
+# NA when Phase 4 is gated off; downstream consumers (memo, validation)
+# handle NAs.
+
+# Worker basis (PRIMARY): each adult counted separately on both sides.
+# This is the public-communication unit. Built off overall_tbl, which is
+# the worker-level SIPP summary, paired against the worker-basis CPS
+# counts surfaced from the cps_universe_tbl summary in Phase 4.
+cps_ratio_workers_tbl <- tibble::tibble(
+  group_chr                     = "Overall (worker basis)",
+  subgroup_chr                  = "All",
+  bucket1_millions              = round(overall_tbl$bucket1_weighted_n / 1e6, 2),
+  bucket2_millions              = round(overall_tbl$bucket2_weighted_n / 1e6, 2),
+  bucket3_millions              = round(overall_tbl$bucket3_weighted_n / 1e6, 2),
+  bucket1_any_and_owns_millions = round(
+    overall_tbl$bucket1_any_and_owns_weighted_n / 1e6, 2),
+  cps_bucket1_millions          = cps_b1_workers_millions_num,
+  cps_bucket2_millions          = cps_b2_workers_millions_num,
+  bucket1_pct_of_cps            = dplyr::if_else(
+    is.na(cps_b1_workers_millions_num) | cps_b1_workers_millions_num == 0,
+    NA_real_,
+    round(100 * (overall_tbl$bucket1_weighted_n / 1e6) /
+            cps_b1_workers_millions_num, 1)
+  ),
+  bucket2_pct_of_cps            = dplyr::if_else(
+    is.na(cps_b2_workers_millions_num) | cps_b2_workers_millions_num == 0,
+    NA_real_,
+    round(100 * (overall_tbl$bucket2_weighted_n / 1e6) /
+            cps_b2_workers_millions_num, 1)
+  )
+)
+
+# Filer basis (SECONDARY): MFJ couples collapsed to one filer per couple
+# on both sides via SIPP U5 (EPNSPOUSE) and CPS Phase 4 (SPLOC). Kept for
+# reference and for downstream consumers that need a tax-return-basis
+# comparison. The primary public framing is worker basis; this table is
+# the supporting sidebar.
+cps_ratio_filers_tbl <- sipp_filer_overall_tbl |>
+  dplyr::mutate(
+    cps_bucket1_millions = cps_b1_filers_millions_num,
+    cps_bucket2_millions = cps_b2_filers_millions_num,
+    bucket1_pct_of_cps   = dplyr::if_else(
+      is.na(cps_b1_filers_millions_num) | cps_b1_filers_millions_num == 0,
+      NA_real_,
+      round(100 * bucket1_millions / cps_b1_filers_millions_num, 1)
+    ),
+    bucket2_pct_of_cps   = dplyr::if_else(
+      is.na(cps_b2_filers_millions_num) | cps_b2_filers_millions_num == 0,
+      NA_real_,
+      round(100 * bucket2_millions / cps_b2_filers_millions_num, 1)
+    )
+  )
 
 ###################################################################################
 ###                                Save Outputs                                 ###
@@ -1266,12 +1689,21 @@ arrow::write_parquet(
   compression = "snappy"
 )
 saveRDS(
-  ebri_ratio_tbl,
-  file.path(path_output_tables, "savers_match_filer_vs_ebri.rds")
+  cps_ratio_workers_tbl,
+  file.path(path_output_tables, "savers_match_workers_vs_cps.rds")
 )
 arrow::write_parquet(
-  ebri_ratio_tbl,
-  file.path(path_output_tables, "savers_match_filer_vs_ebri.parquet"),
+  cps_ratio_workers_tbl,
+  file.path(path_output_tables, "savers_match_workers_vs_cps.parquet"),
+  compression = "snappy"
+)
+saveRDS(
+  cps_ratio_filers_tbl,
+  file.path(path_output_tables, "savers_match_filers_vs_cps.rds")
+)
+arrow::write_parquet(
+  cps_ratio_filers_tbl,
+  file.path(path_output_tables, "savers_match_filers_vs_cps.parquet"),
   compression = "snappy"
 )
 
@@ -1286,9 +1718,13 @@ message("Saved: ",
         file.path(path_output_tables,
                   "savers_match_eligibility_buckets_filerbasis.parquet"))
 message("Saved: ",
-        file.path(path_output_tables, "savers_match_filer_vs_ebri.rds"))
+        file.path(path_output_tables, "savers_match_workers_vs_cps.rds"))
 message("Saved: ",
-        file.path(path_output_tables, "savers_match_filer_vs_ebri.parquet"))
+        file.path(path_output_tables, "savers_match_workers_vs_cps.parquet"))
+message("Saved: ",
+        file.path(path_output_tables, "savers_match_filers_vs_cps.rds"))
+message("Saved: ",
+        file.path(path_output_tables, "savers_match_filers_vs_cps.parquet"))
 
 ###################################################################################
 ###                            Short Memo Output                                ###
@@ -1329,33 +1765,74 @@ memo_lines_chr <- c(
   "",
   "Employer-plan-access note: this addition is distinct from the ownership-based qualifying-account measure above. It uses EPENSNYN (whether the main employer/business had any retirement plan) together with EINCPENS (whether the worker was included in the offered plan(s)). Workers are counted in the no-plan group when the employer had no plan at all or when a plan existed but the worker was not included.",
   "",
-  "## Filer-basis comparison to EBRI (U5)",
+  "## Worker-basis comparison to CPS ASEC 2025 (PRIMARY)",
   "",
-  "The worker-level counts above count each adult in a married couple separately. EBRI's 83.8M / 69.0M / 21.9M anchors are on a tax-return basis, where each MFJ couple contributes exactly one filer. The table below collapses each resolved MFJ spouse-pair to its lower-PNUM member (reference-person-of-pair convention) so the SIPP estimate is directly comparable to EBRI.",
+  "The headline counts above are reported on a worker basis: each adult in a married couple is counted separately. CPS ASEC 2025 (income year 2024) is the primary external anchor and is constructed on the same worker basis here so the comparison is unit-consistent. SIPP 2024 Wave 1 covers reference year 2023, so the SIPP figure understates the 2024-on-2024 comparison by one income year of nominal growth — this caveat drops when SIPP 2025 Wave 2 releases.",
+  "",
+  paste0("- Bucket 1 (any-match, worker basis): ",
+         cps_ratio_workers_tbl$bucket1_millions,
+         " million SIPP workers vs. ",
+         ifelse(is.na(cps_ratio_workers_tbl$cps_bucket1_millions),
+                "CPS not run",
+                paste0(cps_ratio_workers_tbl$cps_bucket1_millions, " million CPS workers")),
+         ifelse(is.na(cps_ratio_workers_tbl$bucket1_pct_of_cps),
+                ".",
+                paste0(" (SIPP is ",
+                       cps_ratio_workers_tbl$bucket1_pct_of_cps,
+                       " percent of CPS)."))),
+  paste0("- Bucket 2 (full-match, worker basis): ",
+         cps_ratio_workers_tbl$bucket2_millions,
+         " million SIPP workers vs. ",
+         ifelse(is.na(cps_ratio_workers_tbl$cps_bucket2_millions),
+                "CPS not run",
+                paste0(cps_ratio_workers_tbl$cps_bucket2_millions, " million CPS workers")),
+         ifelse(is.na(cps_ratio_workers_tbl$bucket2_pct_of_cps),
+                ".",
+                paste0(" (SIPP is ",
+                       cps_ratio_workers_tbl$bucket2_pct_of_cps,
+                       " percent of CPS)."))),
+  paste0("- Bucket 3 (full-match + owns, worker basis): ",
+         cps_ratio_workers_tbl$bucket3_millions,
+         " million SIPP workers. CPS ASEC core does not carry retirement-account ownership flags, so there is no CPS anchor for this quantity."),
+  paste0("- Any-match eligible AND owns qualifying account (worker basis): ",
+         cps_ratio_workers_tbl$bucket1_any_and_owns_millions,
+         " million SIPP workers. CPS has no parallel quantity."),
+  "",
+  "## Filer-basis comparison to CPS ASEC 2025 (secondary)",
+  "",
+  "The filer-basis comparison collapses each resolved MFJ couple to its lower-PNUM member (SIPP) or lower-PERNUM member (CPS) so each tax-filing unit contributes one observation. The IRS administers the Saver's Match per filer, so filer-basis numbers are the right unit for fiscal-cost discussions. For population-eligibility communication the worker-basis numbers above are primary.",
   "",
   paste0("- Bucket 1 (any-match, filer basis): ",
-         ebri_ratio_tbl$bucket1_millions,
-         " million filers (",
-         ebri_ratio_tbl$bucket1_pct_of_ebri,
-         " percent of EBRI 83.8M)."),
+         cps_ratio_filers_tbl$bucket1_millions,
+         " million SIPP filers vs. ",
+         ifelse(is.na(cps_ratio_filers_tbl$cps_bucket1_millions),
+                "CPS not run",
+                paste0(cps_ratio_filers_tbl$cps_bucket1_millions, " million CPS filers")),
+         ifelse(is.na(cps_ratio_filers_tbl$bucket1_pct_of_cps),
+                ".",
+                paste0(" (SIPP is ",
+                       cps_ratio_filers_tbl$bucket1_pct_of_cps,
+                       " percent of CPS)."))),
   paste0("- Bucket 2 (full-match, filer basis): ",
-         ebri_ratio_tbl$bucket2_millions,
-         " million filers (",
-         ebri_ratio_tbl$bucket2_pct_of_ebri,
-         " percent of EBRI 69.0M)."),
+         cps_ratio_filers_tbl$bucket2_millions,
+         " million SIPP filers vs. ",
+         ifelse(is.na(cps_ratio_filers_tbl$cps_bucket2_millions),
+                "CPS not run",
+                paste0(cps_ratio_filers_tbl$cps_bucket2_millions, " million CPS filers")),
+         ifelse(is.na(cps_ratio_filers_tbl$bucket2_pct_of_cps),
+                ".",
+                paste0(" (SIPP is ",
+                       cps_ratio_filers_tbl$bucket2_pct_of_cps,
+                       " percent of CPS)."))),
   paste0("- Bucket 3 (full-match + owns, filer basis): ",
-         ebri_ratio_tbl$bucket3_millions,
-         " million filers (",
-         ebri_ratio_tbl$bucket3_pct_of_ebri,
-         " percent of EBRI 21.9M). Lower bound: couples where only the dropped member owns the account are missed (see U5 caveat)."),
-  paste0("- Any-match eligible AND owns qualifying account (filer basis): ",
-         ebri_ratio_tbl$bucket1_any_and_owns_millions,
-         " million filers. No EBRI anchor exists for this quantity; reported for internal reference only."),
+         cps_ratio_filers_tbl$bucket3_millions,
+         " million SIPP filers. CPS has no parallel quantity. Note: lower bound — couples where only the dropped member owns the account are missed (see U5 caveat)."),
   "",
-  "## External benchmarks",
+  "## Methodology notes",
   "",
-  "- EBRI (Copeland 2024, Issue Brief No. 602, IRS SOI 2018 filers): 83.8M any-match, 69.0M full-match, 21.9M full-match-with-account.",
-  "- Morningstar (January 2025, SCF 2022 households): ~27M eligible.",
+  "- Income concept: calendar-year personal income built by summing observed monthly TPTOTINC across all twelve MONTHCODE rows per person (sum scaled to 12 months via sum * 12 / n_valid_months for the small share of partial-year respondents). This replaces the prior December-times-twelve proxy. See the Income period entry under Open items below for the partial-year share from this run.",
+  "- Above-the-line adjustments to AGI (IRC sec 62: IRA deduction, HSA, student-loan interest, etc.) are not yet applied to the SIPP gross-income proxy. SIPP bucket counts are therefore lower bounds on true AGI-defined eligibility.",
+  "- Historical references not used as anchors: EBRI Copeland (2024, Issue Brief No. 602, IRS SOI 2018 filers, no inflation adjustment) and Morningstar (January 2025, SCF 2022 households). Both are noted for context only.",
   "",
   "## Open items (see methodology doc)",
   "",
@@ -1369,7 +1846,12 @@ memo_lines_chr <- c(
          ifelse(mfj_require_own_earnings_flag,
                 "requires own earnings",
                 "joint-income only")),
-  "- Income period: SIPP TPTOTINC is monthly reference-month person-level income; statute thresholds are annual. See methodology doc for the scaling convention."
+  paste0("- Income period: SIPP TPTOTINC, TFTOTINC, and TPEARN are monthly reference-month values. ",
+         "Calendar-year values are built by aggregating across all observed MONTHCODE rows per person ",
+         "(sum scaled to 12 months via sum * 12 / n_valid_months; Option B). ",
+         "Retirement-module attributes remain on the December reference-month record. ",
+         "Partial-year (< 12 months observed) share from run: ",
+         sprintf("%.2f%%", 100 * n_partial_year_int / n_persons_year_int), ".")
 )
 
 writeLines(

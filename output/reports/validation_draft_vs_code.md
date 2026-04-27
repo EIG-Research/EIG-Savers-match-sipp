@@ -7,11 +7,27 @@
 
 ---
 
+> **Methodology note (2026-04-25):** The numbers in this validation predate
+> three changes adopted in late April 2026. (1) SIPP income was previously
+> approximated as `December TPTOTINC × 12`; the current production
+> methodology builds calendar-year income by summing observed monthly
+> `TPTOTINC` across all twelve `MONTHCODE` rows per person (sum scaled to
+> twelve months for partial-year respondents). (2) External-anchor reporting
+> moved from EBRI Copeland (2024) to CPS ASEC 2025 (income year 2024).
+> (3) The CPS comparison is now reported on a **worker basis** (each adult
+> counted separately) as the primary unit, with the filer-basis comparison
+> demoted to a secondary reference for fiscal-cost discussions. V3 draft
+> numbers should be re-validated against a fresh run of `03g` before
+> publication; the bucket counts have moved.
+
+---
+
 ## Summary
 
-V3 is fully consistent with the verified code outputs. V2 contained stale
-numbers from an earlier methodology; those discrepancies are documented below.
-All numbers in V3 can be traced directly to `03g` output.
+V3 is fully consistent with the verified code outputs **as of 2026-04-20**. V2
+contained stale numbers from an earlier methodology; those discrepancies are
+documented below. All numbers in V3 can be traced directly to `03g` output of
+that date. Re-verification under the post-2026-04-25 methodology is pending.
 
 ---
 
@@ -71,9 +87,9 @@ All numbers in V3 can be traced directly to `03g` output.
 
 ---
 
-## Notes on methodology (from 03g header and footnote 6 in V3)
+## Notes on methodology (from 03g header and footnote 6 in V3, **as of 2026-04-20**)
 
-- **Income proxy**: annualized December TPTOTINC (monthly × 12); above-the-line adjustments not applied → all counts are **lower bounds** on true eligibility
+- **Income proxy (this snapshot)**: annualized December TPTOTINC (monthly × 12); above-the-line adjustments not applied → all counts are **lower bounds** on true eligibility. **Superseded 2026-04-25** by the calendar-year sum-of-monthly-values methodology (Option B); see the methodology note at the top of this file.
 - **MFJ income**: spouse-pair sum via EPNSPOUSE self-join (U1), not TFTOTINC
 - **Student exclusion**: RENROLL == 1 AND EEDFTPT == 1 (full-time enrolled in December), with fallback for ages 18–23 with EEDUC < 40 and earnings < $15,000
 - **Dependent exclusion**: age < 19, or age 19–23 with student flag and earnings < $5,050

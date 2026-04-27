@@ -62,8 +62,13 @@ if (file.exists(expanded_csv_chr)) {
   message("Step 1 SKIPPED: pu2024_expanded.csv already exists.")
 } else {
   message("Step 1: Building pu2024_expanded.csv from pu2024.dta ...")
+  # Source into a fresh env so the child script's rm(list = ls()) at the top
+  # does not clear project_root_chr (and other run_all.R state) from the
+  # global env. Each child script re-resolves project_root via the
+  # EIG_PROJECT_ROOT env var that run_all.R sets above.
   source(file.path(project_root_chr, "code", "01_data_preparation",
-                   "01_sipp_subset_from_dta.R"))
+                   "01_sipp_subset_from_dta.R"),
+         local = new.env(parent = globalenv()))
   message("Step 1 COMPLETE.")
 }
 
@@ -71,8 +76,11 @@ if (file.exists(expanded_csv_chr)) {
 # Step 2: Eligibility bucket estimation
 # ---------------------------------------------------------------------------
 message("Step 2: Running 03g_savers_match_eligibility_buckets.R ...")
+# Same fresh-env pattern as Step 1: child rm(list = ls()) is local to the
+# new env and does not wipe run_all.R's variables.
 source(file.path(project_root_chr, "code", "03_main_estimation",
-                 "03g_savers_match_eligibility_buckets.R"))
+                 "03g_savers_match_eligibility_buckets.R"),
+       local = new.env(parent = globalenv()))
 message("Step 2 COMPLETE.")
 
 message("run_all.R finished. Outputs in output/tables/ and output/reports/.")

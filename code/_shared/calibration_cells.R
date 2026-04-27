@@ -131,6 +131,21 @@ assign_contrib_rate <- function(df, eligible_col, constants) {
 }
 
 build_modeled_sipp_frame <- function(raw, seed = 42L) {
+  # DEPRECATED 2026-04-25. This helper uses the legacy December-times-twelve
+  # annualization (TPTOTINC * 12, TFTOTINC * 12) that was superseded in
+  # 03g_savers_match_eligibility_buckets.R by the Option B calendar-year
+  # sum-of-monthly-values aggregation. The function is currently unused
+  # anywhere in the pipeline; if it is brought back into service, rewrite
+  # it to take an already-aggregated person-year frame as input rather than
+  # raw monthly data. See the person-year aggregation block in 03g for the
+  # standard methodology.
+  warning(
+    "build_modeled_sipp_frame() uses the deprecated December x 12 income ",
+    "annualization. Rewrite to use the Option B person-year aggregation ",
+    "(see 03g) before relying on its output.",
+    call. = FALSE
+  )
+
   constants <- rsaa_calibration_constants()
   stopifnot(abs(
     constants$contrib_share_1 + constants$contrib_share_2 + constants$contrib_share_3 - 1

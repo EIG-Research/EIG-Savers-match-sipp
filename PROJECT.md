@@ -17,15 +17,16 @@
 ## Deliverables
 - Three-bucket eligibility count table (`output/tables/savers_match_eligibility_buckets.rds/.parquet`)
 - Access gap summary (B1 total vs. B1-with-account vs. B1-without-account)
-- Filer-basis EBRI comparison table (`output/tables/savers_match_filer_vs_ebri.rds/.parquet`)
+- Worker-basis CPS ASEC 2025 comparison table (`output/tables/savers_match_workers_vs_cps.rds/.parquet`) — primary external anchor
+- Filer-basis CPS ASEC 2025 comparison table (`output/tables/savers_match_filers_vs_cps.rds/.parquet`) — secondary anchor for fiscal-cost discussions
 - Plain-English memo (`output/reports/savers_match_eligibility_buckets.md`)
 - Validation table cross-checking draft document numbers against code output
 
 ## Constraints
 - Do not commit raw data files (`data/raw/pu2024.dta`, `pu2024_expanded.csv`) — too large
 - CPI projection factor is 1.0 (statutory 2027 thresholds apply as written; COLA starts TY2028)
-- Income proxy: SIPP TPTOTINC (monthly) * 12 as annual AGI proxy; above-the-line adjustments not yet applied (lower-bound bias documented in 03g header)
-- Filer-basis EBRI benchmarks: EBRI Copeland (2024) Issue Brief No. 602: 83.8M any-match, 69.0M full-match, 21.9M full-match-with-account
+- Income concept (standard): calendar-year personal income built by summing observed monthly TPTOTINC across all twelve MONTHCODE rows per person, scaled to twelve months for partial-year respondents (Option B). Replaces the prior Dec × 12 proxy. Above-the-line adjustments to AGI are not yet applied; all SIPP bucket counts are lower bounds on true AGI-defined eligibility (documented in 03g header)
+- Primary external anchor: CPS ASEC 2025 (income year 2024). Comparison is reported on both a worker basis (primary, public-facing) and a filer basis (secondary, fiscal-cost). EBRI Copeland (2024) Issue Brief No. 602 and Morningstar SCF 2022 are documented as historical references and are not used as baselines
 
 ## Additional Context (Open Notes)
 - Source repo: `RSAA-cost-simulation-static` — this repo contains only the Saver's Match eligibility pipeline extracted from the larger RSAA comparison project
