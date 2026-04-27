@@ -23,10 +23,16 @@
 #              pensions excluded), i.e., accounts eligible to receive the
 #              Saver's Match.
 #
+#   Table 3 -- same shape, restricted to workers who do NOT own a qualifying
+#              retirement account. The "access gap" view: workers who would
+#              need to open a new account to receive the Saver's Match. By
+#              construction equals Table 1 minus Table 2 cell by cell.
+#
 # Inputs:  data/raw/pu2024_expanded.csv  (built by 01_sipp_subset_from_dta.R)
 #          code/_shared/calibration_cells.R
 # Outputs: output/tables/answers_eligibility_by_filing_match.{rds,parquet,xlsx}
 #          output/tables/answers_eligibility_account_holders_by_filing_match.{rds,parquet,xlsx}
+#          output/tables/answers_eligibility_access_gap_by_filing_match.{rds,parquet,xlsx}
 #
 # The .rds and .parquet outputs are gitignored under output/** for size reasons;
 # the .xlsx outputs are tracked by git so they sync to the GitHub repo. Each
@@ -420,11 +426,13 @@ if (n_unassigned_int > 0L) {
 ###################################################################################
 ###            Build Filing-Status x Match-Status Tables (Long Form)            ###
 ###################################################################################
-# 10) Two long-format tables (one row per filing x match cell, 9 rows each):
+# 10) Three long-format tables (one row per filing x match cell, 9 rows each):
 #       - Table 1: full SM-eligibility universe
 #       - Table 2: same, restricted to owns_qualifying_account_flag == TRUE
+#       - Table 3: same, restricted to !owns_qualifying_account_flag (access gap)
 #     Each table carries weighted N in millions (2 decimals) and the
-#     unweighted SIPP row count for cell-size diagnostics.
+#     unweighted SIPP row count for cell-size diagnostics. By construction
+#     Table 1 == Table 2 + Table 3 cell by cell.
 
 filing_levels_chr <- c("single_mfs", "hoh", "mfj")
 match_levels_chr  <- c("full_match", "partial_match", "above_ceiling")
@@ -506,6 +514,39 @@ table2_long_tbl <- sm_universe_tbl |>
     factor(match_status_chr,  levels = match_levels_chr)
   )
 
+# Table 3: SM universe AND lacks qualifying account (access gap)
+table3_long_tbl <- sm_universe_tbl |>
+  dplyr::filter(!is.na(match_status_chr), !owns_qualifying_account_flag) |>
+  dplyr::group_by(filing_group_chr, match_status_chr) |>
+  dplyr::summarise(
+    weighted_n_num      = sum(WPFINWGT, na.rm = TRUE),
+    unweighted_rows_int = dplyr::n(),
+    .groups = "drop"
+  ) |>
+  tidyr::complete(
+    filing_group_chr = filing_levels_chr,
+    match_status_chr = match_levels_chr,
+    fill = list(weighted_n_num = 0, unweighted_rows_int = 0L)
+  ) |>
+  dplyr::mutate(
+    weighted_n_millions_num = round(weighted_n_num / 1e6, 2L),
+    filing_status_chr       = filing_group_chr,
+    filing_status_label_chr = filing_label_lookup_chr[filing_group_chr],
+    match_status_label_chr  = match_label_lookup_chr[match_status_chr],
+    universe_chr            = "sm_eligibility_universe_without_qualifying_account"
+  ) |>
+  dplyr::select(
+    universe_chr,
+    filing_status_chr, filing_status_label_chr,
+    match_status_chr,  match_status_label_chr,
+    weighted_n_millions_num,
+    unweighted_rows_int
+  ) |>
+  dplyr::arrange(
+    factor(filing_status_chr, levels = filing_levels_chr),
+    factor(match_status_chr,  levels = match_levels_chr)
+  )
+
 ###################################################################################
 ###            Build Wide Tables With Row + Column Totals (Memo-Ready)          ###
 ###################################################################################
@@ -563,6 +604,31 @@ table2_col_totals_tbl <- data.frame(
   stringsAsFactors = FALSE
 )
 table2_memo_tbl <- dplyr::bind_rows(table2_wide_tbl, table2_col_totals_tbl)
+
+# Table 3 wide (access gap)
+table3_wide_tbl <- table3_long_tbl |>
+  dplyr::select(filing_status_label_chr, match_status_label_chr,
+                weighted_n_millions_num) |>
+  tidyr::pivot_wider(
+    names_from  = match_status_label_chr,
+    values_from = weighted_n_millions_num
+  ) |>
+  dplyr::mutate(
+    `Row total` = round(
+      `Full Match Below` + `Phaseout Range` + `No Match Above`, 2L
+    )
+  )
+
+table3_col_totals_tbl <- data.frame(
+  filing_status_label_chr = "Column total",
+  `Full Match Below`      = round(sum(table3_wide_tbl$`Full Match Below`), 2L),
+  `Phaseout Range`        = round(sum(table3_wide_tbl$`Phaseout Range`),   2L),
+  `No Match Above`        = round(sum(table3_wide_tbl$`No Match Above`),   2L),
+  `Row total`             = round(sum(table3_wide_tbl$`Row total`),        2L),
+  check.names = FALSE,
+  stringsAsFactors = FALSE
+)
+table3_memo_tbl <- dplyr::bind_rows(table3_wide_tbl, table3_col_totals_tbl)
 
 ###################################################################################
 ###          Build Notes Sheets (Per-Workbook Metadata + Thresholds)            ###
@@ -678,6 +744,51 @@ notes2_tbl <- data.frame(
   stringsAsFactors = FALSE
 )
 
+# Notes for Table 3 (access gap; lacks qualifying account)
+notes3_tbl <- data.frame(
+  Field = c(
+    "Workbook",
+    "Generated by",
+    "Generated at",
+    "Source data",
+    "Universe",
+    "Account flag (inverse)",
+    "Universe weighted N (millions, full SM-eligibility universe)",
+    "Income concept",
+    "CPI projection factor (2024 -> 2027)",
+    "Threshold (Single, full match)",
+    "Threshold (Single, upper)",
+    "Threshold (Head of Household, full match)",
+    "Threshold (Head of Household, upper)",
+    "Threshold (Married Filing Jointly, full match)",
+    "Threshold (Married Filing Jointly, upper)",
+    "Cell boundary convention",
+    "Access-gap framing"
+  ),
+  Value = c(
+    "answers_eligibility_access_gap_by_filing_match.xlsx",
+    script_path_chr,
+    run_timestamp_chr,
+    "data/raw/pu2024_expanded.csv (built from pu2024.dta, SIPP 2024 Wave 1)",
+    paste(universe_definition_chr,
+          "Restricted to workers who do NOT own a qualifying retirement account."),
+    "Workers counted here have owns_qualifying_account_flag == FALSE: neither EOWN_THR401 == 1 nor EOWN_IRAKEO == 1. DB pensions are excluded from the qualifying-account definition because they cannot receive Saver's Match contributions.",
+    universe_weighted_n_millions_chr,
+    income_concept_chr,
+    sprintf("%.2f", cpi_projection_factor_num),
+    sprintf("$%s", format(sm_lower[["Single"]], big.mark = ",")),
+    sprintf("$%s", format(sm_upper[["Single"]], big.mark = ",")),
+    sprintf("$%s", format(sm_lower[["HoH"]],    big.mark = ",")),
+    sprintf("$%s", format(sm_upper[["HoH"]],    big.mark = ",")),
+    sprintf("$%s", format(sm_lower[["MFJ"]],    big.mark = ",")),
+    sprintf("$%s", format(sm_upper[["MFJ"]],    big.mark = ",")),
+    boundary_convention_chr,
+    "Counts represent the population that would need to open a new qualifying account to receive the Saver's Match. By construction the cells equal Table 1 minus Table 2."
+  ),
+  check.names = FALSE,
+  stringsAsFactors = FALSE
+)
+
 ###################################################################################
 ###             Save Tables (.rds + .parquet snappy + .xlsx)                    ###
 ###################################################################################
@@ -705,12 +816,23 @@ table2_parquet_path_chr <- file.path(
 table2_xlsx_path_chr <- file.path(
   path_output_tables, "answers_eligibility_account_holders_by_filing_match.xlsx"
 )
+table3_rds_path_chr <- file.path(
+  path_output_tables, "answers_eligibility_access_gap_by_filing_match.rds"
+)
+table3_parquet_path_chr <- file.path(
+  path_output_tables, "answers_eligibility_access_gap_by_filing_match.parquet"
+)
+table3_xlsx_path_chr <- file.path(
+  path_output_tables, "answers_eligibility_access_gap_by_filing_match.xlsx"
+)
 
 # .rds + .parquet
 saveRDS(table1_long_tbl, table1_rds_path_chr)
 arrow::write_parquet(table1_long_tbl, table1_parquet_path_chr, compression = "snappy")
 saveRDS(table2_long_tbl, table2_rds_path_chr)
 arrow::write_parquet(table2_long_tbl, table2_parquet_path_chr, compression = "snappy")
+saveRDS(table3_long_tbl, table3_rds_path_chr)
+arrow::write_parquet(table3_long_tbl, table3_parquet_path_chr, compression = "snappy")
 
 # Shared cell styles for the .xlsx workbooks
 header_style    <- openxlsx::createStyle(textDecoration = "bold")
@@ -785,12 +907,49 @@ openxlsx::freezePane(wb2, "Long", firstRow = TRUE)
 
 openxlsx::saveWorkbook(wb2, table2_xlsx_path_chr, overwrite = TRUE)
 
+# Workbook 3: SM-eligibility universe AND lacks qualifying account (access gap)
+wb3 <- openxlsx::createWorkbook()
+openxlsx::addWorksheet(wb3, "Notes")
+openxlsx::writeData(wb3, "Notes", notes3_tbl, headerStyle = header_style)
+openxlsx::setColWidths(wb3, "Notes", cols = 1:2, widths = c(60, 100))
+openxlsx::freezePane(wb3, "Notes", firstRow = TRUE)
+
+openxlsx::addWorksheet(wb3, "Wide")
+openxlsx::writeData(wb3, "Wide", table3_memo_tbl, headerStyle = header_style)
+openxlsx::setColWidths(wb3, "Wide", cols = 1:5, widths = c(28, 18, 18, 18, 14))
+openxlsx::addStyle(
+  wb3, "Wide",
+  style = number_style,
+  rows  = 2:(nrow(table3_memo_tbl) + 1L),
+  cols  = 2:5,
+  gridExpand = TRUE
+)
+openxlsx::addStyle(
+  wb3, "Wide",
+  style = total_row_style,
+  rows  = nrow(table3_memo_tbl) + 1L,
+  cols  = 1:5,
+  gridExpand = TRUE,
+  stack = TRUE
+)
+openxlsx::freezePane(wb3, "Wide", firstRow = TRUE)
+
+openxlsx::addWorksheet(wb3, "Long")
+openxlsx::writeData(wb3, "Long", table3_long_tbl, headerStyle = header_style)
+openxlsx::setColWidths(wb3, "Long", cols = 1:7, widths = c(60, 22, 28, 22, 22, 22, 22))
+openxlsx::freezePane(wb3, "Long", firstRow = TRUE)
+
+openxlsx::saveWorkbook(wb3, table3_xlsx_path_chr, overwrite = TRUE)
+
 message("Wrote: ", table1_rds_path_chr)
 message("Wrote: ", table1_parquet_path_chr)
 message("Wrote: ", table1_xlsx_path_chr)
 message("Wrote: ", table2_rds_path_chr)
 message("Wrote: ", table2_parquet_path_chr)
 message("Wrote: ", table2_xlsx_path_chr)
+message("Wrote: ", table3_rds_path_chr)
+message("Wrote: ", table3_parquet_path_chr)
+message("Wrote: ", table3_xlsx_path_chr)
 
 ###################################################################################
 ###                Pretty-Print Wide Versions With Marginal Totals              ###
@@ -804,6 +963,10 @@ print(as.data.frame(table1_memo_tbl), row.names = FALSE)
 message("\nTABLE 2 -- Workers with a qualifying retirement account ",
         "(weighted N, millions)")
 print(as.data.frame(table2_memo_tbl), row.names = FALSE)
+
+message("\nTABLE 3 -- Workers without a qualifying retirement account, the ",
+        "access gap (weighted N, millions)")
+print(as.data.frame(table3_memo_tbl), row.names = FALSE)
 
 ###################################################################################
 ###     Reconciliation Against savers_match_eligibility_buckets.rds (03g)       ###
@@ -858,19 +1021,55 @@ if (file.exists(buckets_path_chr)) {
     na.rm = TRUE
   )
 
+  # Access-gap recomputed totals: workers in B1 / B2 who do NOT own a
+  # qualifying account. Expected values from 03g:
+  #   B1 access gap = bucket1_weighted_n - bucket1_any_and_owns_weighted_n
+  #   B2 access gap = bucket2_weighted_n - bucket3_weighted_n
+  # The Table 1 vs. Table 2 cell-by-cell identity (Table 1 = Table 2 + Table 3)
+  # is also implicitly tested by the bucket-level checks above; explicit
+  # access-gap deltas surface a wrong inverse filter directly.
+  access_gap_b1_recomputed_num <- sum(
+    sm_universe_tbl$WPFINWGT *
+      (!is.na(sm_universe_tbl$match_status_chr) &
+         sm_universe_tbl$match_status_chr %in% c("full_match", "partial_match") &
+         !sm_universe_tbl$owns_qualifying_account_flag),
+    na.rm = TRUE
+  )
+  access_gap_b2_recomputed_num <- sum(
+    sm_universe_tbl$WPFINWGT *
+      (!is.na(sm_universe_tbl$match_status_chr) &
+         sm_universe_tbl$match_status_chr == "full_match" &
+         !sm_universe_tbl$owns_qualifying_account_flag),
+    na.rm = TRUE
+  )
+
   reconcile_tol_num <- 50000  # weighted N; ~$50K of weighted persons
 
   delta_b1_num <- abs(bucket1_recomputed_num - overall_row_tbl$bucket1_weighted_n)
   delta_b2_num <- abs(bucket2_recomputed_num - overall_row_tbl$bucket2_weighted_n)
   delta_b3_num <- abs(bucket3_recomputed_num - overall_row_tbl$bucket3_weighted_n)
+  delta_gap_b1_num <- abs(
+    access_gap_b1_recomputed_num -
+      (overall_row_tbl$bucket1_weighted_n -
+         overall_row_tbl$bucket1_any_and_owns_weighted_n)
+  )
+  delta_gap_b2_num <- abs(
+    access_gap_b2_recomputed_num -
+      (overall_row_tbl$bucket2_weighted_n - overall_row_tbl$bucket3_weighted_n)
+  )
 
   message(sprintf(
-    "Reconciliation deltas vs. 03g Overall (tolerance %s): B1=%.0f, B2=%.0f, B3=%.0f",
+    "Reconciliation deltas vs. 03g Overall (tolerance %s): B1=%.0f, B2=%.0f, B3=%.0f, gapB1=%.0f, gapB2=%.0f",
     format(reconcile_tol_num, big.mark = ","),
-    delta_b1_num, delta_b2_num, delta_b3_num
+    delta_b1_num, delta_b2_num, delta_b3_num,
+    delta_gap_b1_num, delta_gap_b2_num
   ))
 
-  if (any(c(delta_b1_num, delta_b2_num, delta_b3_num) > reconcile_tol_num)) {
+  all_deltas_num <- c(
+    delta_b1_num, delta_b2_num, delta_b3_num,
+    delta_gap_b1_num, delta_gap_b2_num
+  )
+  if (any(all_deltas_num > reconcile_tol_num)) {
     stop(
       "Reconciliation FAILED. Cell marginals do not match ",
       "savers_match_eligibility_buckets.rds within tolerance. ",
