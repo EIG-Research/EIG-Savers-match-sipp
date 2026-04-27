@@ -152,8 +152,6 @@ new_vars_chr <- c(
   "EEDGRADE",   # Grade level of enrollment (e.g. high school, undergrad, graduate); refines the student flag.
   "EEDFTPT",    # Full-time vs. part-time student status; needed for the §25B "full-time student" trigger.
   "ERELRPE",    # Person's relationship to reference person; dependency proxy for the "can-be-claimed-as-dependent" exclusion.
-  "EPENSNYN",   # Screen: whether the main employer or business had any retirement plan for anyone in the company/organization.
-  "EINCPENS",   # Inclusion: whether the respondent was included in the retirement plan(s) offered by the main employer or business.
   "EPNSPOUSE",  # Person number of spouse within the same SSUID; lets U1 join spouses and sum TFTOTINC for the MFJ branch.
   "APNSPOUSE"   # Status flag for EPNSPOUSE (imputation / allocation indicator); kept alongside the pointer per Census convention.
 )
