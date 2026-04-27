@@ -14,6 +14,13 @@
 #             full-match-with-account) plus access gap counts. Outputs go to
 #             output/tables/ and output/reports/.
 #
+#   Step 3 -- 03_main_estimation/Answers_for_common_questions.R
+#             Filing-status x match-status decomposition (three contingency
+#             tables: full universe, account holders, access gap). Reconciles
+#             column marginals against Step 2's savers_match_eligibility_buckets
+#             .rds and stops on mismatch. Outputs go to output/tables/ as
+#             answers_eligibility_*.{rds,parquet,xlsx}.
+#
 # Required data:
 #   data/raw/pu2024.dta  (SIPP 2024 Wave 1 Stata file; download from Census)
 #
@@ -82,5 +89,17 @@ source(file.path(project_root_chr, "code", "03_main_estimation",
                  "03g_savers_match_eligibility_buckets.R"),
        local = new.env(parent = globalenv()))
 message("Step 2 COMPLETE.")
+
+# ---------------------------------------------------------------------------
+# Step 3: Filing-status x match-status decomposition (Answers tables)
+# ---------------------------------------------------------------------------
+# Depends on Step 2: the script reconciles its column marginals against
+# output/tables/savers_match_eligibility_buckets.rds and stops on mismatch.
+# Same fresh-env pattern as Steps 1-2.
+message("Step 3: Running Answers_for_common_questions.R ...")
+source(file.path(project_root_chr, "code", "03_main_estimation",
+                 "Answers_for_common_questions.R"),
+       local = new.env(parent = globalenv()))
+message("Step 3 COMPLETE.")
 
 message("run_all.R finished. Outputs in output/tables/ and output/reports/.")

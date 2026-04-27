@@ -38,15 +38,13 @@ Sys.setenv(EIG_PROJECT_ROOT = "C:/path/to/EIG-Savers-match-sipp")
 source("code/run_all.R")
 ```
 
-`run_all.R` runs Step 1 (`01_sipp_subset_from_dta.R`, skipped automatically if `pu2024_expanded.csv` already exists) and Step 2 (`03g_savers_match_eligibility_buckets.R`).
+`run_all.R` runs three steps in sequence, each in a fresh sourced environment:
 
-The filing-status × match-status contingency tables are produced by a separate, idempotent script that reads the same expanded CSV:
+1. **Step 1** — `01_sipp_subset_from_dta.R`. Builds `pu2024_expanded.csv` from `pu2024.dta`. Skipped automatically if the expanded CSV already exists.
+2. **Step 2** — `03g_savers_match_eligibility_buckets.R`. Produces the three-bucket estimates and the CPS validation tables.
+3. **Step 3** — `Answers_for_common_questions.R`. Produces the filing-status × match-status contingency tables. Reconciles its column marginals against `output/tables/savers_match_eligibility_buckets.rds` and stops on a mismatch, so Step 2 must run first.
 
-```r
-source("code/03_main_estimation/Answers_for_common_questions.R")
-```
-
-This script reconciles its column marginals against `output/tables/savers_match_eligibility_buckets.rds` and stops on a mismatch, so 03g must run first.
+Step 3 is idempotent — re-sourcing it without rerunning Step 2 is safe and refreshes the `Notes`-sheet timestamp on each `output/tables/answers_eligibility_*.xlsx` workbook.
 
 ## Outputs
 
@@ -129,15 +127,15 @@ These are workers who would need to open a new qualifying account to receive the
 
 ```
 code/
-  run_all.R                                   # Pipeline entry point
+  run_all.R                                   # Pipeline entry point (Steps 1-3)
   00_setup/
     00_config.R                               # Paths and global options
   01_data_preparation/
-    01_sipp_subset_from_dta.R                 # Build pu2024_expanded.csv from pu2024.dta
+    01_sipp_subset_from_dta.R                 # Step 1: build pu2024_expanded.csv from pu2024.dta
   03_main_estimation/
-    03g_savers_match_eligibility_buckets.R    # Core eligibility engine
-    Answers_for_common_questions.R            # Filing-status x match-status decomposition
-                                              # (run after 03g; reconciles to its bucket totals)
+    03g_savers_match_eligibility_buckets.R    # Step 2: core eligibility engine
+    Answers_for_common_questions.R            # Step 3: filing-status x match-status decomposition
+                                              # (reconciles to Step 2's bucket totals)
   _shared/
     calibration_cells.R                       # Income thresholds, filing-group helpers
 ```
