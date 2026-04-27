@@ -1,0 +1,77 @@
+# ---- Data artifacts ----
+# Raw microdata and interim extracts are reproducible from source (IPUMS, SIPP, etc.)
+# and should never be committed. Final, small, shareable outputs are allowed below.
+data/raw/
+data/interim/
+data/processed/
+data/external/
+
+# Specific large formats anywhere under data/
+data/**/*.dta
+data/**/*.csv
+data/**/*.tsv
+data/**/*.sas7bdat
+data/**/*.sav
+data/**/*.zip
+data/**/*.gz
+data/**/*.dat
+data/**/*.xml
+data/**/*.parquet
+data/**/*.rds
+data/**/*.feather
+data/**/*.h5
+data/**/*.hdf5
+
+# Allow the top-level data directory structure to be tracked via .gitkeep
+!data/.gitkeep
+!data/*/.gitkeep
+
+# ---- Output artifacts (regenerable) ----
+# Keep prose and figure source; exclude bulky binary outputs.
+output/**/*.parquet
+output/**/*.rds
+output/**/*.feather
+
+# ---- R ----
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+*.Rproj
+*-Ex.R
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints/
+.venv/
+venv/
+env/
+.env
+*.egg-info/
+
+# ---- Stata ----
+*.smcl
+*.stswp
+
+# ---- OS / editor cruft ----
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ---- Claude / agent scratch ----
+.claude/worktrees/
+.claude/logs/
+.agents/logs/
+
+# ---- Build / logs ----
+*.log
+/tmp/
+/temp/
+
+# ---- Review reports and fact-checks (regenerable AI agent outputs) ----
+review-reports/
+output/reports/fact_check_*.md
