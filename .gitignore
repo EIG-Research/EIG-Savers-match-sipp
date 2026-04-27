@@ -75,3 +75,17 @@ Thumbs.db
 # ---- Review reports and fact-checks (regenerable AI agent outputs) ----
 review-reports/
 output/reports/fact_check_*.md
+
+# ---- AI tooling and agent infrastructure (local-only; hidden from public repo) ----
+.claude/
+.codex/
+.agents/
+
+# ---- Internal scaffolding and project metadata ----
+Infrastructure/
+PROJECT.md
+Makefile
+
+# ---- Internal drafts and validation reports ----
+drafts/
+output/reports/validation_draft_vs_code.md
