@@ -10,15 +10,18 @@
 #   The canonical raw extract at data/raw/pu2024.csv was produced by the legacy
 #   Stata do-file "1 SIPP subset.do". That do-file kept only 40 variables. The
 #   Saver's Match eligibility work (03g_savers_match_eligibility_buckets.R)
-#   needs TPEARN, RENROLL, EEDENROLL, EEDGRADE, EEDFTPT, and ERELRPE in addition to those
-#   40 variables. This script is an R-native replacement for the Stata do-file:
-#   it reads pu2024.dta directly via haven::read_dta() and writes a richer
-#   extract to pu2024_expanded.csv (and a parquet sibling). It leaves the
-#   original pu2024.csv untouched so downstream scripts that still point at
-#   the 40-column extract keep working until they are migrated.
+#   needs eight additional variables: TPEARN, RENROLL, EEDENROLL, EEDGRADE,
+#   EEDFTPT, and ERELRPE for the earnings / enrollment / dependency proxies,
+#   plus EPNSPOUSE and APNSPOUSE (added 2026-04-19) for the U1 spouse-pair
+#   joint-income construction on the MFJ branch. This script is an R-native
+#   replacement for the Stata do-file: it reads pu2024.dta directly via
+#   haven::read_dta() and writes a richer extract to pu2024_expanded.csv
+#   (and a parquet sibling). It leaves the original pu2024.csv untouched so
+#   downstream scripts that still point at the 40-column extract keep working
+#   until they are migrated.
 #
 # Input:   data/raw/pu2024.dta           (Stata .dta from Census SIPP 2024 Wave 1)
-# Output:  data/raw/pu2024_expanded.csv  (45 variables; long-form person-month)
+# Output:  data/raw/pu2024_expanded.csv  (48 variables; long-form person-month)
 #          data/raw/pu2024_expanded.parquet
 
 rm(list = ls())

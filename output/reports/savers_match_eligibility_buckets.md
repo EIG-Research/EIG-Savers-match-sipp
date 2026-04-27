@@ -1,6 +1,6 @@
 # Saver's Match Eligible Population: Three-Bucket Estimate
 
-_Generated: 2026-04-25_
+_Generated: 2026-04-27_
 
 ## Headline (overall, worker-level, SIPP 2024, 2027-projected thresholds)
 
@@ -8,11 +8,6 @@ _Generated: 2026-04-25_
 - Bucket 2 (full-match eligible): 15.1 million workers.
 - Bucket 3 (full-match eligible AND currently hold a qualifying account): 3.5 million workers.
 - Any-match eligible AND currently hold a qualifying account: 12.4 million workers (superset of Bucket 3; includes phaseout-range owners who are not in Bucket 2).
-- Any-match eligible AND may not have an employer-provided retirement plan through their main employer/business: 25.3 million workers.
-- Full-match eligible AND may not have an employer-provided retirement plan through their main employer/business: 10.7 million workers.
-- Phaseout-range eligible AND may not have an employer-provided retirement plan through their main employer/business: 14.6 million workers.
-
-Employer-plan-access note: this addition is distinct from the ownership-based qualifying-account measure above. It uses EPENSNYN (whether the main employer/business had any retirement plan) together with EINCPENS (whether the worker was included in the offered plan(s)). Workers are counted in the no-plan group when the employer had no plan at all or when a plan existed but the worker was not included.
 
 ## Worker-basis comparison to CPS ASEC 2025 (PRIMARY)
 
