@@ -1,0 +1,11 @@
+panel_order_int,label_chr,group_chr,eligible_M_num,cost_M_num,cost_B_num
+1,"JCT FY2028 score
+(current-law, enacted)",jct,10,2097,2.097
+2,"Current law, DC-only,
+auto-enroll (80%)",cl,10,2902,2.902
+3,"Current law, DC-only,
+full participation",cl,10,3679,3.679
+4,"Current law, universal,
+full participation",cl,33.08,9192,9.192
+5,"Doubled thresholds, universal,
+full participation",2x,81.08,41067,41.067

@@ -35,7 +35,7 @@ path_output_tbl_appendix <- file.path(path_output, "tables", "appendix")
 path_output_intermediate <- file.path(path_output, "data", "intermediate_results")
 
 cfg <- list(
-  project_name = "RSAA Cost Simulation",
+  project_name = "Saver's Match: eligibility and cost analysis",
   audience = "Policy brief",
   project_scope_tier = 2L,  # 1=Descriptive/Blog, 2=Analytical Brief, 3=Full Research Paper
   currency_base_year = 2024L,
@@ -64,4 +64,20 @@ files <- list(
 )
 
 set.seed(cfg$seed)
-message("Loaded config. Project root: ", path_project)
+
+# ----------------------------------------------------------------------------
+# Bootstrap the shared analytic core. Sourcing this config gives a stage the
+# single source of truth (params), the helper library, the one canonical frame
+# builder, and the scenario engine. Order matters: params -> helpers/v2 builder
+# -> build_frame -> scenario_engine.
+# ----------------------------------------------------------------------------
+path_shared <- file.path(path_code, "_shared")
+local({
+  core_files <- c("params.R", "calibration_cells.R", "build_frame.R", "scenario_engine.R")
+  for (f in core_files) {
+    fp <- file.path(path_shared, f)
+    if (file.exists(fp)) source(fp)
+  }
+})
+
+message("Loaded config + shared core. Project root: ", path_project)

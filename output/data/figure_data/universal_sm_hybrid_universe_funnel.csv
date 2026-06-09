@@ -1,0 +1,7 @@
+step_label_chr,unweighted_n_int,weighted_n_num,step_id_int
+01_total_december_persons,36214,331103912,1
+02_age_18_plus,29579,259941662.0991111,2
+03_not_dependent,28637,249485646.12237608,3
+04_not_full_time_student,27733,239912440.32400995,4
+05_has_annual_earned_income,16106,156712853.2948034,5
+06_valid_filing_group,14961,145344746.31424597,6

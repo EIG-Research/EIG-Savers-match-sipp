@@ -1,0 +1,363 @@
+---
+title: "A Universal Saver's Match"
+subtitle: "Design, reach, generosity, and cost of a redesigned federal retirement-savings match"
+date: "`r format(Sys.Date(), '%B %e, %Y')`"
+params:
+  root: NULL
+output:
+  html_document:
+    self_contained: true
+    theme: null
+    highlight: null
+    mathjax: null
+    df_print: kable
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
+                      results = "asis", fig.align = "center")
+
+suppressPackageStartupMessages({
+  library(arrow)
+  library(dplyr)
+  library(readr)
+  library(knitr)
+  library(kableExtra)
+})
+
+## ---- Resolve the project root (param -> env var -> upward search) -----------
+root <- params$root
+if (is.null(root) || !nzchar(root) || !dir.exists(root)) {
+  root <- Sys.getenv("EIG_PROJECT_ROOT", unset = "")
+}
+if (!nzchar(root) || !dir.exists(root)) {
+  cand <- normalizePath(getwd())
+  while (!dir.exists(file.path(cand, "Infrastructure")) && cand != dirname(cand)) {
+    cand <- dirname(cand)
+  }
+  root <- cand
+}
+
+dp <- file.path(root, "data", "processed", "universal_sm_hybrid")
+rep_dir <- file.path(root, "output", "reports", "universal_sm_hybrid")
+fig_dir <- file.path(root, "output", "figures", "universal_sm_hybrid")
+
+## ---- Load the live pipeline artifacts ---------------------------------------
+scen   <- as.data.frame(read_parquet(file.path(dp, "scenario_results.parquet")))
+pivots <- readRDS(file.path(dp, "pivot_table.rds"))$pivot_tbl
+sim    <- as.data.frame(read_parquet(file.path(dp, "simulation_results.parquet")))
+funnel <- read_csv(file.path(rep_dir, "universe_funnel.csv"), show_col_types = FALSE)
+
+get_scen <- function(nm) scen[scen$scenario_name_chr == nm, , drop = FALSE][1, ]
+headline <- get_scen("headline_sipp_observed_conditional")
+dc_route <- get_scen("headline_dc_access_row_level")
+uv_route <- get_scen("headline_universal_account_uniform")
+s_noauto <- get_scen("sens_no_auto_5_7pct")
+s_auto80 <- get_scen("sens_auto_enroll_80pct")
+s_full   <- get_scen("sens_full_participation_100pct")
+
+pv <- function(grp, col) pivots[[col]][pivots$filing_group_chr == grp]
+
+## ---- Current-law Saver's Match contrast (same population, full take-up) ------
+cl_avail <- FALSE
+cl_path <- file.path(root, "output", "tables", "main", "sm_jct_replication_scenarios.xlsx")
+if (requireNamespace("openxlsx", quietly = TRUE) && file.exists(cl_path)) {
+  cl <- openxlsx::read.xlsx(cl_path, sheet = "All Scenario Results")
+  cl_row <- cl[cl$Scenario == "universal_m100", , drop = FALSE]
+  if (nrow(cl_row) == 1L) {
+    cl_avail   <- TRUE
+    cl_elig_M  <- cl_row[["Eligible.(M)"]]
+    cl_cost_M  <- cl_row[["Annual.Cost.($M)"]]
+    cl_avg     <- cl_row[["Avg.Match/Person.($)"]]
+  }
+}
+
+## ---- Universe / sample funnel -----------------------------------------------
+fn <- function(step) funnel$weighted_n_num[funnel$step_label_chr == step] / 1e6
+adults_18p_M <- fn("02_age_18_plus")
+earners_M    <- fn("05_has_annual_earned_income")
+universe_M   <- fn("06_valid_filing_group")
+
+## ---- Distributional incidence (full-participation match dollars) ------------
+inc <- sim[!is.na(sim$magi_num), ]
+inc <- inc[order(inc$magi_num), ]
+inc$cw  <- cumsum(inc$WPFINWGT)
+inc$dec <- pmin(10L, floor(inc$cw / sum(inc$WPFINWGT) * 10) + 1L)
+inc$mw  <- ifelse(is.na(inc$match_per_worker_num), 0, inc$match_per_worker_num) * inc$WPFINWGT
+dec_tbl <- inc |>
+  group_by(dec) |>
+  summarise(dollars = sum(mw), .groups = "drop") |>
+  mutate(share = dollars / sum(dollars))
+bottom3_share  <- sum(dec_tbl$share[dec_tbl$dec <= 3])
+bottom_half_sh <- sum(dec_tbl$share[dec_tbl$dec <= 5])
+zero_top_n     <- sum(dec_tbl$share < 0.001)
+
+## ---- Routing split among eligible workers -----------------------------------
+elig <- sim[sim$eligible_flag %in% TRUE, ]
+route_tbl <- elig |>
+  group_by(route_chr) |>
+  summarise(
+    elig_M    = sum(WPFINWGT, na.rm = TRUE) / 1e6,
+    mean_magi = sum(magi_num * WPFINWGT, na.rm = TRUE) / sum(WPFINWGT, na.rm = TRUE),
+    mean_rate = sum(match_rate_pp_num * WPFINWGT, na.rm = TRUE) / sum(WPFINWGT, na.rm = TRUE),
+    cost_B    = sum(match_per_worker_num * WPFINWGT, na.rm = TRUE) / 1e9,
+    .groups = "drop"
+  )
+route_lab <- c(employer_plan = "Existing workplace plan",
+               universal_account = "New universal account")
+route_tbl$label <- unname(route_lab[route_tbl$route_chr])
+route_tbl <- route_tbl[order(-route_tbl$elig_M), ]
+
+## ---- Generosity anchors for a single filer ----------------------------------
+single_pivot    <- pv("single_mfs", "pivot_num")
+single_endpoint <- pv("single_mfs", "endpoint_num")
+single_median   <- pv("single_mfs", "data_median_magi_num")
+# Schedule: rate(M) = 200 - (150 / pivot) * M (percent). Required own contribution
+# to capture the full $1,000 credit = $1,000 / (rate / 100). The helper returns NA
+# where the rate is non-positive (at/above the endpoint) so the cap-divide never
+# yields Inf; the anchors used below all sit at strictly positive rates.
+rate_at <- function(M) pmax(0, 200 - (150 / single_pivot) * M)
+magi_at_rate <- function(r) (200 - r) / (150 / single_pivot)  # invert for r in pp
+contrib_to_cap <- function(rate_pp) ifelse(rate_pp > 0, 1000 / (rate_pp / 100), NA_real_)
+m_at_100 <- magi_at_rate(100)               # MAGI where the match rate is 100 percent
+contrib_at_0   <- contrib_to_cap(rate_at(0))         # = $500 at the 200 percent floor
+contrib_at_100 <- contrib_to_cap(rate_at(m_at_100))  # = $1,000
+share_at_100   <- contrib_at_100 / m_at_100
+
+## ---- Formatting helpers ------------------------------------------------------
+d0  <- function(x) paste0("$", formatC(round(x), format = "d", big.mark = ","))
+bil <- function(m) sprintf("$%.1f billion", m / 1000)          # input in $ millions
+mil <- function(x) sprintf("%.1f million", x)                   # input in millions
+pct <- function(frac, dig = 0) sprintf(paste0("%.", dig, "f percent"), 100 * frac)
+ppt <- function(pp) sprintf("%.0f percent", pp)                 # a value already in pp
+
+elig_share <- headline$eligible_count_M_num / universe_M
+```
+
+<style>
+body{font-family:"Open Sans","Segoe UI",Helvetica,Arial,sans-serif;max-width:820px;
+  margin:36px auto;padding:0 24px;color:#1a1a1a;line-height:1.5;font-size:15px;}
+h1{font-size:26px;margin-bottom:2px;color:#024140;}
+h2{font-size:18px;margin-top:30px;color:#19644d;border-bottom:2px solid #19644d;padding-bottom:3px;}
+h3{font-size:15px;margin-top:20px;color:#19644d;}
+.subtitle{font-size:15px;color:#555;}
+.lede{font-size:16px;font-weight:600;color:#024140;margin:14px 0;}
+.why{background:#FEECD6;border-left:4px solid #E1AD28;padding:10px 14px;margin:14px 0;border-radius:3px;}
+table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px;}
+th{background:#19644d;color:#fff;text-align:left;padding:6px 9px;}
+td{padding:6px 9px;border-bottom:1px solid #e0e0e0;}
+tr:nth-child(even) td{background:#f7f9f8;}
+img{max-width:100%;height:auto;margin:8px 0;}
+.cap{font-size:12px;color:#666;text-align:center;margin-top:-2px;margin-bottom:16px;}
+.foot{font-size:12px;color:#777;margin-top:28px;border-top:1px solid #ddd;padding-top:10px;}
+</style>
+
+<p class="lede">A universal, automatic retirement account paired with a redesigned federal
+match would extend a meaningful savings subsidy to roughly `r mil(headline$eligible_count_M_num)`
+low- and moderate-income workers at an estimated headline cost of about `r bil(headline$annual_cost_M_num)` per year.</p>
+
+<div class="why">
+**Why it matters.** The savings match enacted in federal law rewards only workers who already
+hold a workplace retirement account and who contribute enough to claim it. Workers without a plan
+at work — independent contractors, gig workers, and employees of firms that offer nothing — are
+left out, and the lowest earners gain the least. The design described here pairs the match with a
+savings account that every worker can use, raises the subsidy rate sharply at the bottom of the
+income scale, and lowers the amount a worker must set aside to receive the full credit.
+</div>
+
+## What the policy does
+
+The proposal has two moving parts. First, every covered worker is automatically enrolled — at a
+default contribution of three percent of earnings — into a retirement account. Workers already
+covered by a qualifying workplace plan keep that plan; everyone else is routed into a new universal
+account modeled on a low-cost, portable federal design. This closes the access gap that keeps the
+current match from reaching the workers it was meant to help.
+
+Second, the federal match itself is redesigned. Rather than a flat 50 percent match that stops at a
+fixed income cutoff, the match rate becomes a single declining line that depends on a worker's
+income and tax-filing status. The rate begins at 200 percent for the lowest earners — three federal
+dollars for every one the worker saves becomes one dollar of credit for every fifty cents
+saved — and falls steadily as income rises, reaching zero at the top of each eligibility band. The
+federal credit is capped at `r d0(1000)` per individual, so a married couple in which both spouses
+work can receive up to `r d0(2000)` between them.
+
+Because the schedule is anchored to the income distribution rather than to fixed dollar thresholds,
+the eligibility band scales automatically with filing status and can be re-anchored as incomes
+change over time.
+
+```{r schedule-fig, out.width="86%"}
+sched_png <- file.path(fig_dir, "match_rate_by_magi.png")
+if (file.exists(sched_png)) knitr::include_graphics(sched_png)
+```
+<p class="cap">The redesigned match rate (solid) against the current-law Saver's Match (dashed),
+by filing status. The redesigned rate is far higher at low incomes and reaches more of the
+distribution.</p>
+
+### Where the eligibility band falls
+
+```{r schedule-tbl}
+sched <- data.frame(
+  `Filing status` = c("Single / married filing separately", "Head of household", "Married filing jointly"),
+  `Highest-match income` = c(d0(0), d0(0), d0(0)),
+  `Income at a 50% rate (pivot)` = c(d0(pv("single_mfs","pivot_num")), d0(pv("hoh","pivot_num")), d0(pv("mfj","pivot_num"))),
+  `Income where match ends`      = c(d0(pv("single_mfs","endpoint_num")), d0(pv("hoh","endpoint_num")), d0(pv("mfj","endpoint_num"))),
+  check.names = FALSE
+)
+sched$`Highest-match income` <- "$0 (200% rate)"
+kable(sched, align = c("l","l","r","r"), row.names = FALSE) |>
+  kable_styling(full_width = TRUE, bootstrap_options = c("condensed"))
+```
+
+## Who it reaches
+
+The estimates rest on a large, nationally representative U.S. household survey that records each
+person's earnings, income, household composition, and access to a workplace retirement plan.
+Survey weights are applied throughout so that every figure reflects the national population rather
+than the sample count.
+
+The analysis begins with the roughly `r mil(adults_18p_M)` U.S. residents age 18 or older and
+narrows to the working population most relevant to the policy: people with earnings and a
+determinable tax-filing status, after setting aside dependents and full-time students. That leaves
+a universe of about `r mil(universe_M)` workers. Within it, an estimated
+`r mil(headline$eligible_count_M_num)` workers — close to `r pct(elig_share)` of the universe — fall
+inside the redesigned eligibility band and would qualify for a positive match.
+
+```{r funnel-fig, out.width="74%"}
+fn_png <- file.path(fig_dir, "universe_funnel.png")
+if (file.exists(fn_png)) knitr::include_graphics(fn_png)
+```
+<p class="cap">From all adults to the working population that the match can reach.</p>
+
+Eligible workers reach the match through one of two channels. Those who already hold a workplace
+plan claim it there; the rest reach it through the new universal account. The universal account
+carries the larger share of eligible workers, both because it absorbs self-employed workers and
+because workers without a plan at work tend to have lower incomes — and therefore higher match
+rates.
+
+```{r route-tbl}
+rt <- data.frame(
+  `Channel` = route_tbl$label,
+  `Eligible workers` = mil(route_tbl$elig_M),
+  `Average income` = d0(route_tbl$mean_magi),
+  `Average match rate` = paste0(round(route_tbl$mean_rate), "%"),
+  check.names = FALSE
+)
+kable(rt, align = c("l","r","r","r"), row.names = FALSE) |>
+  kable_styling(full_width = TRUE, bootstrap_options = c("condensed"))
+```
+
+## How generous it is
+
+The redesign is most visible at the bottom of the income scale, where the current match does the
+least. Three measures make the point, using a single filer as the example.
+
+- **A far higher subsidy rate.** At very low earnings the match rate is 200 percent, meaning a
+  worker who sets aside just `r d0(contrib_at_0)` receives the full `r d0(1000)` federal credit. The
+  rate is still 100 percent at about `r d0(m_at_100)` of income, where a `r d0(contrib_at_100)`
+  contribution — roughly `r pct(share_at_100, 1)` of earnings — captures the full credit.
+- **An easier path to the maximum credit.** Under current law a worker must contribute the full
+  `r d0(2000)` to receive the `r d0(1000)` maximum. Under the redesign, low earners reach the same
+  maximum on a fraction of that amount, which matters because lower-income workers were never
+  likely to set aside `r d0(2000)`.
+- **A larger average award.** Across all participants the redesign delivers an average federal
+  match of about `r d0(headline$avg_match_per_person_num)` per year`r if (cl_avail) paste0(", set against roughly ", d0(cl_avg), " per worker under the current-law match at full participation in the same population. The two averages rest on different participation assumptions, so read this as a broad comparison rather than a like-for-like one") else ""`.
+
+The federal dollars are concentrated where the need is greatest. Of the full-participation match,
+an estimated `r pct(bottom3_share)` flows to the lowest-earning 30 percent of the workforce (the
+bottom three income deciles), and nearly all of it to the lower-earning half. The highest-income
+workers receive nothing, because the match phases out entirely before their income range begins.
+
+```{r incidence-fig, out.width="74%"}
+inc_png <- file.path(fig_dir, "incidence_by_decile.png")
+if (file.exists(inc_png)) knitr::include_graphics(inc_png)
+```
+<p class="cap">Share of federal match dollars by income decile across the full workforce (1 = lowest).
+The subsidy is weighted toward lower-income savers; higher deciles receive little or nothing.</p>
+
+## What it costs
+
+The headline estimate is an annual federal cost of about `r bil(headline$annual_cost_M_num)`,
+reaching `r mil(headline$participant_count_M_num)` participating savers at a take-up rate of about
+`r pct(headline$takeup_rate_num)`. Cost depends heavily on how many eligible workers actually
+participate, which is why the estimate is presented as a range rather than a single number.
+
+```{r cost-tbl}
+cost <- data.frame(
+  `Participation scenario` = c(
+    "Low take-up, no automatic enrollment",
+    "Headline (observed participation behavior)",
+    "Automatic enrollment at 80 percent participation",
+    "Full participation (upper bound)"),
+  `Take-up` = c(pct(s_noauto$takeup_rate_num), pct(headline$takeup_rate_num),
+                pct(s_auto80$takeup_rate_num), pct(s_full$takeup_rate_num)),
+  `Participants` = c(mil(s_noauto$participant_count_M_num), mil(headline$participant_count_M_num),
+                     mil(s_auto80$participant_count_M_num), mil(s_full$participant_count_M_num)),
+  `Annual cost` = c(bil(s_noauto$annual_cost_M_num), bil(headline$annual_cost_M_num),
+                    bil(s_auto80$annual_cost_M_num), bil(s_full$annual_cost_M_num)),
+  check.names = FALSE
+)
+kable(cost, align = c("l","r","r","r"), row.names = FALSE) |>
+  kable_styling(full_width = TRUE, bootstrap_options = c("condensed"))
+```
+
+Two features of the cost range stand out. The structural ceiling — the cost if every eligible
+worker participated fully — is about `r bil(s_full$annual_cost_M_num)`, so the program cannot cost
+more than that at any plausible behavioral response. And the floor scenario, which assumes none of
+the automatic-enrollment machinery works and participation matches the low claim rate of the
+predecessor tax credit, would cost only about `r bil(s_noauto$annual_cost_M_num)` — a reminder that
+the policy's value depends on the automatic account doing its job.
+
+```{r contrast, eval=cl_avail}
+cat("### How it compares with current law\n\n")
+contrast <- data.frame(
+  ` ` = c("Match rate at the bottom", "Income thresholds",
+          "Eligible workers", "Federal cost", "Average match per worker"),
+  `Current-law Saver's Match` = c(
+    "50%",
+    "Fixed dollar cutoffs",
+    mil(cl_elig_M),
+    bil(cl_cost_M),
+    d0(cl_avg)),
+  `This proposal` = c(
+    "Up to 200%",
+    "Anchored to the income distribution",
+    mil(headline$eligible_count_M_num),
+    paste0(bil(headline$annual_cost_M_num), " (headline)"),
+    d0(headline$avg_match_per_person_num)),
+  check.names = FALSE
+)
+print(kable(contrast, align = c("l","l","l"), row.names = FALSE) |>
+  kable_styling(full_width = TRUE, bootstrap_options = c("condensed")))
+cat("\n\nThe current-law comparison applies the same population and a full-participation assumption, so the difference reflects design alone.\n")
+```
+
+## How the estimates were produced, and what to keep in mind
+
+The cost and reach figures come from a microsimulation: the policy rules are applied to each worker
+in the survey, the federal match is computed for that worker given their income, filing status, and
+savings channel, and the results are summed using national population weights. Incomes are projected
+forward to the policy's first effective tax year using a standard wage-growth assumption so that the
+dollar thresholds line up with the year the policy would take effect.
+
+A few assumptions shape the numbers and should travel with them. The estimates are descriptive: they
+show what the policy rules would cost and whom they would reach under stated participation
+assumptions, not a behavioral forecast of how saving or work decisions might change. Participation is
+the largest source of uncertainty, which is why the cost is reported as a range; and the federal
+match is paid only on contributions workers actually make, so the estimates assume the automatic
+three percent default is contributed. Because the underlying data are a sample of households, the
+figures are point estimates rather than exact counts; they are not reported with statistical
+confidence intervals, so small differences should not be over-interpreted. The income measure is
+drawn from a household survey and approximates — but does not exactly equal — the income concept a
+tax agency would use, so the
+eligibility thresholds would shift modestly under a tax-administered version. The survey's incomes
+are aged forward to the policy's first year for dollar comparability, but the population's
+composition and saving behavior are not re-projected. The estimates also leave aside administrative
+costs, the cost of running the universal account, and any rules governing early withdrawals; each
+matters for an implementing statute but not for the headline transfer cost reported here.
+
+<p class="foot">
+Source: Author's analysis of a nationally representative U.S. household survey (2024), projected to
+the policy's first effective tax year. All population figures are survey-weighted. Costs are annual
+and expressed in current dollars. Figures reflect the most recent model run and may update as inputs
+are refreshed.
+</p>

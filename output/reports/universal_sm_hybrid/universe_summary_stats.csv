@@ -1,0 +1,5 @@
+group_chr,n_unweighted_int,weighted_M_num,mean_magi_num,median_magi_num,mean_earnings_num,mean_age_num,pct_participating_dc_na,pct_access_missing,pct_has_dc
+All,14961,145.34,141304,91182,91433,44.3,39.6,4.7,60.4
+hoh,1225,12.28,81133,55061,75865,44.2,49.8,4.8,50.2
+mfj,7594,70.95,208763,154781,110670,48.1,32.4,4.4,67.6
+single_mfs,6142,62.11,76144,54799,72537,40,46.5,5,53.5

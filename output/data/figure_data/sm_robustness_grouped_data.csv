@@ -1,0 +1,13 @@
+participation_chr,design_chr,cost_M_num,cost_B_num
+"No auto-enrollment
+(5.7% takeup)",Current-law thresholds,523.9440000000001,0.5239440000000001
+"No auto-enrollment
+(5.7% takeup)",Doubled thresholds,2340.819,2.3408189999999998
+"Auto-enrollment
+(80%)",Current-law thresholds,7353.6,7.3536
+"Auto-enrollment
+(80%)",Doubled thresholds,32853.6,32.8536
+"Full participation
+(upper bound)",Current-law thresholds,9192,9.192
+"Full participation
+(upper bound)",Doubled thresholds,41067,41.067
