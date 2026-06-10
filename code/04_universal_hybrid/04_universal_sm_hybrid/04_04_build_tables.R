@@ -107,6 +107,18 @@ pivot_obj_list    <- readRDS(pivot_rds_path_chr)
 sm_pivot_2024_num <- pivot_obj_list$pivot_vec_num
 max_credit_num    <- 1000  # spec Section 5.2; max credit per filer in USD
 
+# Weighted median (WPFINWGT), so the per-decile median labels match the
+# survey-weighted convention used everywhere else in the pipeline. The deciles
+# are already weighted-constructed (add_weighted_decile); the within-decile
+# median must be weighted too, since it feeds the published
+# contribution-rate-to-hit-cap column below.
+wtd_median <- function(x, w) {
+  ok <- !is.na(x) & !is.na(w) & w > 0
+  if (!any(ok)) return(NA_real_)
+  x <- x[ok]; w <- w[ok]; o <- order(x); x <- x[o]; w <- w[o]
+  x[which(cumsum(w) >= 0.5 * sum(w))[1]]
+}
+
 ###################################################################################
 ###                  2) Headline + Sensitivity Table                            ###
 ###################################################################################
@@ -168,9 +180,9 @@ incidence_pooled_eligible_tbl <- simulation_tbl |>
     n_rows_int                     = dplyr::n(),
     weighted_n_M_num               = sum(WPFINWGT, na.rm = TRUE) / 1e6,
     min_magi_num                   = min(magi_num, na.rm = TRUE),
-    median_magi_num                = median(magi_num, na.rm = TRUE),
+    median_magi_num                = wtd_median(magi_num, WPFINWGT),
     max_magi_num                   = max(magi_num, na.rm = TRUE),
-    median_rate_pp_num             = median(match_rate_pp_num, na.rm = TRUE),
+    median_rate_pp_num             = wtd_median(match_rate_pp_num, WPFINWGT),
     mean_match_per_worker_full_num = sum(match_per_worker_num * WPFINWGT, na.rm = TRUE) /
                                        sum(WPFINWGT, na.rm = TRUE),
     total_match_dollars_M_full_num = sum(match_per_worker_num * WPFINWGT, na.rm = TRUE) / 1e6,
@@ -204,7 +216,7 @@ incidence_pooled_universe_tbl <- simulation_tbl |>
     share_eligible_in_decile_num     = sum(WPFINWGT[eligible_flag == TRUE], na.rm = TRUE) /
                                          sum(WPFINWGT, na.rm = TRUE),
     min_magi_num                     = min(magi_num, na.rm = TRUE),
-    median_magi_num                  = median(magi_num, na.rm = TRUE),
+    median_magi_num                  = wtd_median(magi_num, WPFINWGT),
     max_magi_num                     = max(magi_num, na.rm = TRUE),
     mean_match_per_worker_full_num   = sum(match_per_worker_zerofill_num * WPFINWGT, na.rm = TRUE) /
                                          sum(WPFINWGT, na.rm = TRUE),
@@ -247,7 +259,7 @@ incidence_within_filing_tbl <- simulation_tbl |>
     share_eligible_in_decile_num     = sum(WPFINWGT[eligible_flag == TRUE], na.rm = TRUE) /
                                          sum(WPFINWGT, na.rm = TRUE),
     min_magi_num                     = min(magi_num, na.rm = TRUE),
-    median_magi_num                  = median(magi_num, na.rm = TRUE),
+    median_magi_num                  = wtd_median(magi_num, WPFINWGT),
     max_magi_num                     = max(magi_num, na.rm = TRUE),
     mean_match_per_worker_full_num   = sum(match_per_worker_zerofill_num * WPFINWGT, na.rm = TRUE) /
                                          sum(WPFINWGT, na.rm = TRUE),

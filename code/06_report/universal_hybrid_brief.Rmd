@@ -52,7 +52,6 @@ get_scen <- function(nm) scen[scen$scenario_name_chr == nm, , drop = FALSE][1, ]
 headline <- get_scen("headline_sipp_observed_conditional")
 dc_route <- get_scen("headline_dc_access_row_level")
 uv_route <- get_scen("headline_universal_account_uniform")
-s_noauto <- get_scen("sens_no_auto_5_7pct")
 s_auto80 <- get_scen("sens_auto_enroll_80pct")
 s_full   <- get_scen("sens_full_participation_100pct")
 
@@ -195,6 +194,12 @@ distribution.</p>
 
 ### Where the eligibility band falls
 
+Each filing status has a *pivot* — the income level at which the match rate has declined to 50
+percent. Below the pivot the rate is higher (rising to 200 percent at zero income); above it the rate
+keeps falling along the same line until it reaches zero, where the match ends. Because the pivot is
+set from the income distribution rather than a fixed dollar cutoff, it scales with filing status and
+can be re-anchored over time.
+
 ```{r schedule-tbl}
 sched <- data.frame(
   `Filing status` = c("Single / married filing separately", "Head of household", "Married filing jointly"),
@@ -284,15 +289,14 @@ participate, which is why the estimate is presented as a range rather than a sin
 ```{r cost-tbl}
 cost <- data.frame(
   `Participation scenario` = c(
-    "Low take-up, no automatic enrollment",
     "Headline (observed participation behavior)",
     "Automatic enrollment at 80 percent participation",
     "Full participation (upper bound)"),
-  `Take-up` = c(pct(s_noauto$takeup_rate_num), pct(headline$takeup_rate_num),
+  `Take-up` = c(pct(headline$takeup_rate_num),
                 pct(s_auto80$takeup_rate_num), pct(s_full$takeup_rate_num)),
-  `Participants` = c(mil(s_noauto$participant_count_M_num), mil(headline$participant_count_M_num),
+  `Participants` = c(mil(headline$participant_count_M_num),
                      mil(s_auto80$participant_count_M_num), mil(s_full$participant_count_M_num)),
-  `Annual cost` = c(bil(s_noauto$annual_cost_M_num), bil(headline$annual_cost_M_num),
+  `Annual cost` = c(bil(headline$annual_cost_M_num),
                     bil(s_auto80$annual_cost_M_num), bil(s_full$annual_cost_M_num)),
   check.names = FALSE
 )
@@ -302,10 +306,9 @@ kable(cost, align = c("l","r","r","r"), row.names = FALSE) |>
 
 Two features of the cost range stand out. The structural ceiling — the cost if every eligible
 worker participated fully — is about `r bil(s_full$annual_cost_M_num)`, so the program cannot cost
-more than that at any plausible behavioral response. And the floor scenario, which assumes none of
-the automatic-enrollment machinery works and participation matches the low claim rate of the
-predecessor tax credit, would cost only about `r bil(s_noauto$annual_cost_M_num)` — a reminder that
-the policy's value depends on the automatic account doing its job.
+more than that at any plausible behavioral response. And the headline sits well below that ceiling
+because participation, while high under automatic enrollment, is not universal — the policy's reach
+depends on the automatic account doing its job.
 
 ```{r contrast, eval=cl_avail}
 cat("### How it compares with current law\n\n")

@@ -346,8 +346,12 @@ headline_universal_result_list <- run_scenario(
   scenario_group_chr     = "headline"
 )
 
-headline_eligible_M_num     <- headline_dc_result_list$eligible_count_M_num +
-                                 headline_universal_result_list$eligible_count_M_num
+# Take the eligible count from the single unrounded universe total (the DC-access
+# and universal-account branches partition the eligible universe), rather than
+# summing the two separately-rounded branch counts -- this avoids a 0.01M
+# double-rounding artifact that otherwise made the headline eligible count (46.06M)
+# disagree with the single-population sensitivity rows (46.07M).
+headline_eligible_M_num     <- round(eligible_wgt_M_num, 2L)
 headline_participants_M_num <- headline_dc_result_list$participant_count_M_num +
                                  headline_universal_result_list$participant_count_M_num
 headline_cost_M_num         <- headline_dc_result_list$annual_cost_M_num +
@@ -371,12 +375,11 @@ headline_combined_list <- list(
   annual_cost_M_num        = headline_cost_M_num
 )
 
-sens_no_auto_list <- run_scenario(
-  df                     = universe_tbl,
-  scenario_name_chr      = "sens_no_auto_5_7pct",
-  participation_rate_num = policy_params$takeup_no_auto_num,
-  scenario_group_chr     = "sensitivity"
-)
+# Note: the former 5.7% "no-auto-enrollment floor" sensitivity (anchored on the
+# legacy Saver's Credit opt-in claim rate) was removed -- that rate is not a
+# realistic participation assumption under an auto-enrollment design, and the
+# legacy-credit claim rate is not relevant to this policy. The reported range runs
+# from the headline (observed conditional participation) up to full participation.
 sens_auto_enroll_list <- run_scenario(
   df                     = universe_tbl,
   scenario_name_chr      = "sens_auto_enroll_80pct",
@@ -394,7 +397,6 @@ scenarios_list <- list(
   headline_combined_list,
   headline_dc_result_list,
   headline_universal_result_list,
-  sens_no_auto_list,
   sens_auto_enroll_list,
   sens_full_list
 )
