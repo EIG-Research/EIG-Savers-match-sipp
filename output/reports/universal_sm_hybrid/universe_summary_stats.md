@@ -1,6 +1,6 @@
 # Hybrid Analysis Universe -- Summary Statistics
 
-Computed at: 2026-06-09 16:49:23.051537
+Computed at: 2026-06-11 14:08:52.668194
 
 Weighted summary of the analysis universe (age 18+, non-dependent, non-student, positive earned income, valid filing group; all worker classes). MAGI and earnings are TY2027-projected dollars. Missingness columns flag the share of rows with no determinable participation/access signal.
 

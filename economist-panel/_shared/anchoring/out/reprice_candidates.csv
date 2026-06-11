@@ -1,0 +1,5 @@
+"schedule","single_pivot","single_endpoint","eligible_M","full_particip_cost_B","avg_match"
+"CURRENT (SIPP worker median, 0.5x anchor): single pivot 0.6*54799",32879,43839,46.07,24.92,541
+"IRS all-filer median, HALF-median anchor (0.6x M): endpoint just below s6433",24176,32235,28.06,12.22,436
+"IRS all-filer median, FULL-median anchor (1.2x M): what was requested",48353,64470,73.19,52.26,714
+"IRS all-filer median, 2/3-median anchor (0.8x M): CHOSEN [pivot 0.8*M]",32235,42980,44.47,23.87,537

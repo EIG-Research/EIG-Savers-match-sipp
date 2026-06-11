@@ -1,0 +1,7 @@
+"segment","total_workers_m","match_eligible_m","not_eligible_m","mean_magi_eligible","median_default_contrib"
+"Federal universal account - W-2 workers (payroll rail exists)",44.06,22.24,21.81,34769.98,1225.01
+"Federal universal account - self-employed (NO payroll rail)",13.26,4.41,8.85,38896.26,1640.81
+"Employer plans (must accept federal match deposits)",88.03,19.41,68.61,42436.68,2235.13
+"MEMO: universal-account route, class of worker unknown (NA flag, counted above as W-2)",10.53,5.66,NA,NA,NA
+"MEMO: full auto-enrollment universe (all rows)",145.34,46.07,NA,NA,NA
+"MEMO: hybrid match-eligible workers (46.07M target)",46.07,46.07,NA,NA,NA

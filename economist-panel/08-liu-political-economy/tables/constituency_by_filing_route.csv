@@ -1,0 +1,11 @@
+"filing_group","route","eligible_millions","match_dollars_bn_full","mean_match_rate_pp","mean_magi","self_employed_millions","share_of_eligible_pct","share_of_dollars_pct"
+"Single / MFS","Employer plan",9.31,4.27,66.73,29211.24,0,20.22,17.15
+"Single / MFS","Federal universal account",14.13,6.88,84.51,25315.74,1.58,30.66,27.62
+"Head of household","Employer plan",3.6,2.37,70.93,42436.52,0,7.82,9.5
+"Head of household","Federal universal account",3.8,2.73,102.42,32081.91,0.59,8.24,10.97
+"Married filing jointly","Employer plan",6.5,3.81,59.95,61389.26,0,14.11,15.29
+"Married filing jointly","Federal universal account",8.73,4.85,77.68,53323.31,2.24,18.95,19.47
+"Single / MFS","All routes",23.44,11.16,77.44,26863.67,1.58,50.88,44.77
+"Head of household","All routes",7.4,5.1,87.1,37121.35,0.59,16.06,20.47
+"Married filing jointly","All routes",15.23,8.66,70.11,56766.01,2.24,33.06,34.76
+"All filing groups","All routes",46.07,24.92,76.57,38395.86,4.41,100,100

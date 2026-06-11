@@ -1,0 +1,15 @@
+"metric","value"
+"Universal-account defaulters, total (M)",57.32
+"Share with default contribution < $250/yr",0.0668
+"Share with default contribution < $500/yr",0.1563
+"Share with default contribution < $1,000/yr",0.3766
+"Weighted median default contribution ($/yr)",1282
+"Weighted median first-year fee revenue at 0.15% cap ($)",0.96
+"Share with first-year fee revenue < $20 TPA cost (at 0.15% cap)",0.9939
+"Account balance needed for 0.15% fee to cover $20/acct cost ($)",13333
+"Benchmark: CRR per-account TPA cost ($/yr)",20
+"Benchmark: TSP gross admin cost per participant 2023 ($/yr)",72
+"Benchmark: TSP net admin cost per participant 2023 ($/yr)",61
+"Benchmark: CalSavers avg funded-account balance 3/31/2026 ($)",2544
+"Benchmark: OregonSaves avg account balance Dec 2025 ($)",3000
+"Benchmark: Illinois Secure Choice avg funded balance Dec 2025 ($)",1861

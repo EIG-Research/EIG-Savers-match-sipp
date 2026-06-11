@@ -128,8 +128,8 @@ cur_credit_cap_num  <- cur_rate_max_num * cur_contrib_cap_num              # 1,0
 
 # Income grid covers the entire eligibility band plus a margin past the endpoint
 # so the figures show where the policy has bite and where it does not. Under the
-# 75%@half-median design the Single endpoint is (4/3) x pivot = 0.8 x the Single
-# median (~$40.4K), so the grid runs well past that.
+# 75%@two-thirds-median IRS-anchored design the Single endpoint is (4/3) x pivot =
+# 1.067 x the IRS Single median (~$43K), so the grid runs well past that.
 grid_min_num  <- 1000L              # avoid divide-by-zero in share-of-earnings
 grid_max_num  <- 80000L             # well past the Single endpoint ((4/3) x pivot)
 grid_step_num <- 100L               # smooth curves
@@ -410,13 +410,13 @@ fig1_curlaw_tbl <- dplyr::tibble(magi_num = seq(0, cur_high_num, by = 250)) |>
                                            (cur_high_num - cur_low_num)))
   )
 
-# The design anchor: 75% at one half the Single median MAGI. With the 200% floor
-# this is the point magi_at_rate(75) = (5/6) * pivot, which equals 1/2 the Single
-# median by construction. This is the headline callout for the panel.
+# The design anchor: 75% at two-thirds the IRS Single median MAGI. With the 200%
+# floor this is the point magi_at_rate(75) = (5/6) * pivot, which equals 2/3 the
+# IRS Single median by construction (pivot = 0.8 x median). Headline callout.
 anchor75_magi_num    <- magi_at_rate(75)
 anchor75_rate_pp_num <- 75
 
-# Dots at $0, the 75%-at-half-median design anchor, and the endpoint. The
+# Dots at $0, the 75%-at-two-thirds-median design anchor, and the endpoint. The
 # endpoint keeps its dot but carries NO text label -- the line visibly collapses
 # to 0 there.
 fig1_points_tbl <- dplyr::tibble(
@@ -426,13 +426,13 @@ fig1_points_tbl <- dplyr::tibble(
 
 # Text callouts on the $0 floor and the 75% design anchor:
 #   - "200% match at zero MAGI" sits just below and to the right of the line.
-#   - "75% match at one half the Single median MAGI" sits directly above the dot.
+#   - "75% match at two-thirds the Single median MAGI" sits directly above the dot.
 # Nudges are a first pass; tuned on the render-inspect loop.
 fig1_labels_tbl <- dplyr::tibble(
   magi_num          = c(0, anchor75_magi_num),
   match_rate_pp_num = c(floor_pp_num, anchor75_rate_pp_num),
   label_full_chr    = c(paste0(round(floor_pp_num), "% match\nat zero MAGI"),
-                        "75% match at\none half the Single median MAGI"),
+                        "75% match at\ntwo-thirds the Single median MAGI"),
   nudge_x_num       = c(4000, 0),
   nudge_y_num       = c(-28, 22),
   hjust_num         = c(0, 0.5)
@@ -508,10 +508,10 @@ fig1_gg <- ggplot2::ggplot(fig1_line_tbl, ggplot2::aes(x = magi_num, y = match_r
                       "% at zero MAGI to 0% at $",
                       formatC(round(endpoint_single_num), format = "d", big.mark = ",")),
     subtitle = paste0("Expanded Policy vs. current-law Saver's Match, ", filing_group_label_chr,
-                      " filer, 2024 dollars"),
+                      " filer, TY2027 dollars"),
     x        = "Modified adjusted gross income (MAGI)",
     y        = "Federal match rate",
-    caption  = "Source: Author's calculation. Pivot from SIPP 2024 Wave 1 weighted median MAGI."
+    caption  = "Source: Author's calculation. Pivot anchored to the IRS all-single-filer median AGI (SOI Table 1.2); 75% rate at two-thirds the median."
   ) +
   eig_tufte_theme
 

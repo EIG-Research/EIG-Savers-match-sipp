@@ -66,7 +66,9 @@ Canonical frame behind the current-law (1.00×) and expanded-threshold (1.25×/1
 - `output/tables/universal_sm_hybrid/hybrid_headline.xlsx`, `hybrid_by_route.xlsx`, `hybrid_distributional_incidence.xlsx`
 - `output/tables/main/sm_jct_replication_scenarios.xlsx` (current-law 1.00× row: 33.08M eligible, $9.19B full participation, $278 avg match)
 
-## Canonical headline numbers (snapshot 2026-06-09)
+> **Superseded 2026-06-11 (D1 re-anchoring).** The numbers in this section are the basis the ten panelists analyzed. The production model was subsequently re-anchored to the IRS single-filer median (75% at ⅔ of the median); the current canonical headline is **44.47M eligible / $14.15B / $23.87B ceiling**, pivots Single $32,235 / HoH $48,353 / MFJ $64,471. See `economist-panel/DESIGN-DECISIONS.md` (D1) and `_shared/anchoring/FINDINGS.md`. The panel assessments below were written against the pre-re-anchoring figures and are intentionally preserved as historical analysis.
+
+## Canonical headline numbers (snapshot 2026-06-09; superseded — see note above)
 
 - Universe: 145.34M workers; eligible under hybrid: 46.07M (31.7 percent).
 - Headline cost $14.9B/yr at 59.8 percent take-up; $543 average match per participant; full-participation ceiling $24.9B.

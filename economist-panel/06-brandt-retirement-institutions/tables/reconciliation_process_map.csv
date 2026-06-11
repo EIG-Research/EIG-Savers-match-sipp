@@ -1,0 +1,8 @@
+"population","workers_m","administrative_process_required"
+"All match-eligible workers (rate strictly in (0,200))",46.04,"Year-end MAGI determination at tax filing; match computed after return processed; Treasury deposit 'as soon as practicable' (one-year lag behind contributions)"
+"Sub-cap eligibles (match < $1,000; match moves dollar-for-dollar with MAGI realization)",40.28,"Full true-up: every dollar of difference between payroll-period income and filed MAGI changes the match; median exposure $32 per $1,000 MAGI revision (p75 $47)"
+"Cap-binding eligibles (match = $1,000; locally insensitive to MAGI news)",5.79,"No marginal true-up needed unless MAGI revision is large enough to unbind the cap; simplest cohort to administer"
+"Near-endpoint eligibles (MAGI within $2,000 of the zero-match endpoint)",2.48,"Cliff-adjacent: a modest MAGI surprise (bonus, second job, spouse earnings) zeroes the match; full clawback/denial processing after contributions were already deposited"
+"Self-employed eligibles in the universal account (no payroll rail)",4.41,"No employer withholding: contributions must flow via quarterly estimated-tax rails or annual reconciliation; income observed only at filing - both sides of min(rate x contrib, $1,000) unknown until April"
+"All participating eligibles: section 6433(d)(2) distribution recapture",46.07,"3-year lookback netting prior distributions against qualified contributions (simulation does not model this); requires cross-plan, cross-year information returns (1099-R matching) before any match is paid"
+"Non-eligible auto-enrolled defaulters (account servicing only, no match)",99.28,"Account opening, payroll remittance, statements, opt-out processing - no match reconciliation, but full recordkeeping cost"

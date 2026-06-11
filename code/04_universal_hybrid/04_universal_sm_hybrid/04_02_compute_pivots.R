@@ -28,6 +28,7 @@ suppressPackageStartupMessages({
   library(dplyr)
   library(arrow)
   library(Hmisc)
+  library(readxl)
 })
 
 ###################################################################################
@@ -90,6 +91,13 @@ path_output_reports_chr <- file.path(project_root, "output", "reports", "univers
 if (!dir.exists(path_data_processed_chr)) dir.create(path_data_processed_chr, recursive = TRUE)
 if (!dir.exists(path_output_reports_chr)) dir.create(path_output_reports_chr, recursive = TRUE)
 
+# IRS SOI anchor source (design decision D1, 2026-06-11). The eligibility
+# frontier is anchored to administrative IRS data, NOT to the SIPP sample, so
+# the policy is reproducible without SIPP. SOI Table 1.2 (by marital status)
+# supplies the single-filer AGI distribution; the latest available wave stands
+# in for "the tax year immediately preceding implementation."
+path_irs_soi_chr <- file.path(project_root, "data", "raw", "irs_soi", "23in12ms.xls")
+
 ###################################################################################
 ###                          1) Load Universe                                   ###
 ###################################################################################
@@ -135,23 +143,30 @@ for (i in seq_len(nrow(median_by_group_tbl))) {
 ###################################################################################
 ###                  3) Build the Pivot Table                                   ###
 ###################################################################################
-# Anchor the Single pivot on the Single filer's weighted-median MAGI; scale for
-# MFJ and HoH using the statutory Saver's Match lower-threshold ratios. This
+# Anchor the Single pivot on the IRS all-single-filer median AGI (-> MAGI); scale
+# for MFJ and HoH using the statutory Saver's Match lower-threshold ratios. This
 # mirrors the existing SM structure (MFJ = 2.0 x Single, HoH = 1.5 x Single per
-# IRC sec 6433 / sm_calibration_constants()$sm_lower) rather than rescaling
-# each filing group to its own data-derived median.
+# IRC sec 6433 / sm_calibration_constants()$sm_lower) rather than rescaling each
+# filing group to its own data-derived median.
 #
-# Geometric note: the schedule is a single straight line per filing group with a
-# 200% floor at MAGI = 0 and the 50% point at the pivot, so the rate crosses zero
-# at (4/3) * pivot. The DESIGN anchor (revised 2026-06-08b) fixes the Single rate
-# at 75% at ONE HALF the Single median MAGI; with the 200% floor that places the
-# 50% crossing (the "pivot" compute_match_rate keys on) at 0.6 x the Single median
-# and the 0% endpoint at 0.8 x the Single median:
-#   - Single: pivot = 0.6 * Single median;     endpoint = (4/3) * pivot = 0.8 * Single median.
-#   - MFJ:    pivot = 2.0 * Single pivot;      endpoint = (4/3) * 2.0 * Single pivot.
-#   - HoH:    pivot = 1.5 * Single pivot;      endpoint = (4/3) * 1.5 * Single pivot.
-# All pivots and endpoints are anchored to the Single pivot via the SM ratios,
-# not to each group's own data median.
+# DESIGN DECISION D1 (2026-06-11): the eligibility frontier is anchored to
+# administrative IRS data (SOI Table 1.2 single-filer median AGI), NOT to the
+# SIPP sample median, so the policy is reproducible independent of SIPP. The
+# 75% rate is fixed at TWO-THIRDS of the IRS single median (a legislator-legible
+# "two-thirds of the median" rule). With the 200% floor that places the 50%
+# crossing (the "pivot" compute_match_rate keys on) at 0.8 x the IRS single
+# median and the 0% endpoint at (4/3)*0.8 = 1.067 x the median:
+#   - Single: pivot = 0.8 * IRS single median; endpoint = (4/3) * pivot.
+#   - MFJ:    pivot = 2.0 * Single pivot;       endpoint = (4/3) * 2.0 * Single pivot.
+#   - HoH:    pivot = 1.5 * Single pivot;       endpoint = (4/3) * 1.5 * Single pivot.
+# The two-thirds anchor was chosen so the IRS-anchored schedule reproduces the
+# prior SIPP-median-anchored coverage within ~3-4% while moving the frontier onto
+# a stable administrative basis. See Infrastructure/specs and
+# economist-panel/DESIGN-DECISIONS.md (D1) plus economist-panel/_shared/anchoring/.
+# Anchor history: 2026-05-28 = 300% floor, pivot (5/6)*SIPP-median; 2026-06-08 =
+# 200% floor, 50% at SIPP median; 2026-06-08b = 200% floor, 75% at one-half the
+# SIPP median (pivot 0.6x); 2026-06-11 = 200% floor, 75% at two-thirds the IRS
+# single median (pivot 0.8x), SIPP relegated to simulation only.
 
 sm_constants <- sm_calibration_constants()
 sm_lower_num   <- sm_constants$sm_lower
@@ -169,36 +184,76 @@ message(sprintf(
   sm_pivot_ratios_num[["hoh"]]
 ))
 
-# Single anchor: the weighted median MAGI for the single_mfs filing group within the
-# analysis universe (in_universe). (Reverted 2026-06-09 from the full single-filer
-# population median back to the in-universe median.)
-single_median_num <- median_by_group_tbl |>
+# --- IRS single-filer median AGI (-> MAGI), projected to TY2027 ---------------
+# Read SOI Table 1.2 (by marital status) and interpolate the weighted median AGI
+# for single + MFS returns (the "single_mfs" filing group). AGI -> MAGI add-backs
+# (sec 911 / 931 / 933) are ~0 at the median and are not applied. The TY2023 SOI
+# median is projected to TY2027 to match the simulation's TY2027 income basis,
+# using the repo's annualized wage-growth rate (1.093 over 3 years -> 1.093^(4/3)
+# over 4 years). At actual enactment the policy uses the real prior-year IRS
+# median with no projection.
+irs_proj_factor_num <- 1.093^(4/3)        # ~1.1259; 2023 -> 2027 at the repo's ~3.0%/yr
+
+compute_irs_single_median_agi <- function(soi_path_chr) {
+  if (!file.exists(soi_path_chr)) {
+    stop("IRS SOI file not found at: ", soi_path_chr,
+         ". Required to anchor the pivot (design decision D1).", call. = FALSE)
+  }
+  d <- suppressMessages(readxl::read_excel(soi_path_chr, sheet = 1, col_names = FALSE))
+  # SOI Table 1.2 layout (TY2023, 23in12ms.xls): AGI-size bins in rows 10-28
+  # (row 10 = no/negative AGI). Marital-status column groups: Single returns
+  # number-of-returns = col 50; MFS number-of-returns = col 26.
+  rows_int <- 10:28
+  lower_num <- c(-Inf, 1, 5e3, 10e3, 15e3, 20e3, 25e3, 30e3, 40e3, 50e3, 75e3,
+                 100e3, 200e3, 500e3, 1e6, 1.5e6, 2e6, 5e6, 10e6)
+  upper_num <- c(0, 5e3, 10e3, 15e3, 20e3, 25e3, 30e3, 40e3, 50e3, 75e3, 100e3,
+                 200e3, 500e3, 1e6, 1.5e6, 2e6, 5e6, 10e6, Inf)
+  counts_num <- as.numeric(d[[50]][rows_int]) + as.numeric(d[[26]][rows_int])  # single + MFS
+  total_num  <- sum(counts_num, na.rm = TRUE)
+  target_num <- total_num / 2
+  cum_num    <- cumsum(counts_num)
+  k_int      <- which(cum_num >= target_num)[1]
+  lo_num <- if (is.infinite(lower_num[k_int])) 0 else lower_num[k_int]
+  hi_num <- if (is.infinite(upper_num[k_int])) lo_num * 2 else upper_num[k_int]
+  below_num <- if (k_int == 1) 0 else cum_num[k_int - 1]
+  lo_num + (target_num - below_num) / counts_num[k_int] * (hi_num - lo_num)
+}
+
+irs_single_median_ty2023_num <- compute_irs_single_median_agi(path_irs_soi_chr)
+single_median_num <- irs_single_median_ty2023_num * irs_proj_factor_num  # -> TY2027
+
+# Diagnostic only: the SIPP in-universe single_mfs median, for comparison.
+sipp_single_median_num <- median_by_group_tbl |>
   dplyr::filter(filing_group_chr == "single_mfs") |>
   dplyr::pull(median_magi_num)
+
 if (length(single_median_num) != 1L || is.na(single_median_num) ||
     single_median_num <= 0) {
-  stop("Could not derive a positive Single-filer median MAGI to anchor the pivot table.",
+  stop("Could not derive a positive IRS single-filer median MAGI to anchor the pivot table.",
        call. = FALSE)
 }
+message(sprintf(
+  "IRS single+MFS median AGI: $%d (TY2023) -> $%d (TY2027, x%.4f). SIPP in-universe single median (diag): $%d.",
+  round(irs_single_median_ty2023_num, 0L), round(single_median_num, 0L),
+  irs_proj_factor_num, round(sipp_single_median_num, 0L)
+))
+
 # Pivot anchor: derive the 50% crossing point (the "pivot" compute_match_rate
-# keys on) from the design anchor "75% at one half the Single median," holding
-# the 200% floor fixed. With a fixed floor the straight line is pinned by that
-# one anchor point:
+# keys on) from the design anchor "75% at TWO-THIRDS the IRS single median,"
+# holding the 200% floor fixed. With a fixed floor the straight line is pinned
+# by that one anchor point:
 #   slope = (anchor_rate - floor) / anchor_magi
 #   pivot = (50 - floor) / slope            (the MAGI where the rate equals 50%)
-# This lands the 50% crossing at 0.6 x the Single median and the 0% endpoint at
-# 0.8 x the Single median. (History: 2026-05-28 used a 300% floor with the 50%
-# point at (5/6) x median; 2026-06-08 used a 200% floor with 50% at the Single
-# median; 2026-06-08b moved the anchor to 75% at one half the Single median to
-# pull the eligibility ceiling back near current-law levels.)
+# This lands the 50% crossing at 0.8 x the IRS single median and the 0% endpoint
+# at (4/3)*0.8 = 1.067 x the median.
 anchor_floor_pp_num <- 200
 anchor_rate_pp_num  <- 75
-anchor_frac_num     <- 0.5
+anchor_frac_num     <- 2 / 3
 anchor_magi_num     <- anchor_frac_num * single_median_num
 anchor_slope_num    <- (anchor_rate_pp_num - anchor_floor_pp_num) / anchor_magi_num
 single_pivot_num    <- (50 - anchor_floor_pp_num) / anchor_slope_num
 message(sprintf(
-  "Single anchor: %d%% at $%d (= %.2f x median $%d) -> 50%% pivot = $%d, endpoint = $%d",
+  "Single anchor: %d%% at $%d (= %.3f x IRS median $%d) -> 50%% pivot = $%d, endpoint = $%d",
   anchor_rate_pp_num, round(anchor_magi_num, 0L), anchor_frac_num,
   round(single_median_num, 0L), round(single_pivot_num, 0L),
   round((4 / 3) * single_pivot_num, 0L)
@@ -267,12 +322,14 @@ diag_lines_chr <- c(
   "",
   "## Method",
   "",
-  "The schedule is a single straight line with a 200 percent floor at $0 MAGI. The **design anchor** fixes the Single rate at **75 percent at one half the Single weighted-median MAGI** (the median is computed inside the 04_01 universe via `Hmisc::wtd.quantile(probs = 0.5)`). Holding the floor fixed, that anchor places the 50 percent crossing (the pivot `compute_match_rate()` keys on) at 0.6 x the Single median and the 0 percent endpoint at (4/3) x pivot = 0.8 x the Single median. MFJ and HoH pivots are scaled from the Single pivot using the statutory Saver's Match lower-threshold ratios from `sm_calibration_constants()$sm_lower`:",
+  sprintf("The schedule is a single straight line with a 200 percent floor at $0 MAGI. Per design decision D1 (2026-06-11) the **design anchor** fixes the Single rate at **75 percent at two-thirds the IRS all-single-filer median AGI** (SOI Table 1.2, single + MFS returns; TY2023 median $%d projected to TY2027 $%d at x%.4f). The policy is anchored to administrative IRS data, not the SIPP sample (SIPP relegated to simulation only; the SIPP in-universe single median was $%d, shown for comparison). Holding the floor fixed, the two-thirds anchor places the 50 percent crossing (the pivot `compute_match_rate()` keys on) at 0.8 x the IRS single median and the 0 percent endpoint at (4/3) x pivot = 1.067 x the median. MFJ and HoH pivots are scaled from the Single pivot using the statutory Saver's Match lower-threshold ratios from `sm_calibration_constants()$sm_lower`:",
+          round(irs_single_median_ty2023_num, 0L), round(single_median_num, 0L),
+          irs_proj_factor_num, round(sipp_single_median_num, 0L)),
   "",
   "- **MFJ ratio:** sm_lower[MFJ] / sm_lower[Single] = 41000 / 20500 = 2.00",
   "- **HoH ratio:** sm_lower[HoH] / sm_lower[Single] = 30750 / 20500 = 1.50",
   "",
-  "Endpoint (where the rate hits zero) = (4/3) x pivot for each filing group. The Single pivot is 0.6 x the Single median, so the Single endpoint is 0.8 x the Single median. For MFJ and HoH the pivot is 2.0 x and 1.5 x the Single pivot, and the endpoint is (4/3) x that pivot (not tied to that group's own data median).",
+  "Endpoint (where the rate hits zero) = (4/3) x pivot for each filing group. The Single pivot is 0.8 x the IRS single median, so the Single endpoint is 1.067 x that median. For MFJ and HoH the pivot is 2.0 x and 1.5 x the Single pivot, and the endpoint is (4/3) x that pivot. The `data median` column below is the SIPP in-universe median for each group (the population the simulation scores), shown against the IRS-anchored frontier.",
   "",
   "## Pivot table",
   "",

@@ -1,0 +1,10 @@
+"scenario","family","participants_M","cost_B","pct_of_headline"
+"Repo headline (SIPP conditional, 59.8%)","Baseline",27.54,14.95,100
+"State upper: OregonSaves feasible participation (62.4%)","A. Participation",28.12,15.26,102.12
+"State central: positive-balance participation (48%)","A. Participation",24.95,13.52,90.44
+"State lower: OregonSaves global participation (34.3%)","A. Participation",21.93,11.86,79.32
+"Contribution persistence: 59.4% of default dollars arrive","B. Contributions",27.54,12.26,82.06
+"Contributions capped at state median dollars ($1,019/yr)","B. Contributions",27.54,14.49,96.97
+"Contributions capped at state mean dollars ($1,336/yr)","B. Contributions",27.54,14.79,98.95
+"State-evidence-calibrated central (48% x persistence)","C. Combined",24.95,11.36,76.04
+"State-evidence-calibrated lower (34.3% x persistence x median cap)","C. Combined",21.93,10.1,67.56

@@ -716,18 +716,20 @@ build_modeled_sipp_frame_v2 <- function(raw, seed = 42L) {
 #   - The same slope continues past the pivot until the rate hits zero.
 #     Set 200 - (150/pivot) * M = 0 -> M = (4/3) * pivot.
 #   - This function is agnostic about WHERE the pivot comes from; 04_02 sets it.
-#     Under the current design the Single pivot is 0.6 x the Single weighted-median
-#     MAGI (derived from the design anchor "75% at one half the Single median"
-#     given the 200% floor). MFJ and HoH pivots are scaled from the Single pivot
-#     via the SM lower-threshold ratios (MFJ = 2.0 x, HoH = 1.5 x), so their
-#     endpoints are (4/3) x those pivots.
+#     Under the current design (2026-06-11) the Single pivot is 0.8 x the IRS
+#     all-single-filer median MAGI (derived from the design anchor "75% at
+#     two-thirds the IRS Single median" given the 200% floor). MFJ and HoH pivots
+#     are scaled from the Single pivot via the SM lower-threshold ratios
+#     (MFJ = 2.0 x, HoH = 1.5 x), so their endpoints are (4/3) x those pivots.
 #   - Anchor history: the 2026-05-28 design used a 300% floor with pivot at
 #     (5/6) x median (endpoint = Single median). 2026-06-08 used a 200% floor with
 #     the 50% point at the Single median. 2026-06-08b kept the 200% floor but moved
-#     the design anchor to 75% at one half the Single median (50% crossing at
-#     0.6 x median, endpoint at 0.8 x median), pulling the eligibility ceiling
-#     back near current-law levels. The function form (200 floor, -150/pivot
-#     slope, 50% at pivot) is unchanged across these revisions.
+#     the design anchor to 75% at one half the SIPP Single median (50% crossing at
+#     0.6 x median, endpoint at 0.8 x median). 2026-06-11 re-anchored to the IRS
+#     all-single-filer median with the 75% point at two-thirds the median (50%
+#     crossing at 0.8 x the IRS median, endpoint at 1.067 x), moving the policy off
+#     the SIPP sample onto an administrative basis. The function form (200 floor,
+#     -150/pivot slope, 50% at pivot) is unchanged across all these revisions.
 #
 # HOW THE FUNCTION IS USED:
 #   pivot_table is a named numeric vector keyed by filing_group_chr:
@@ -742,7 +744,7 @@ build_modeled_sipp_frame_v2 <- function(raw, seed = 42L) {
 #   and explicit handling of NA filing groups (returns NA_real_, not 0).
 #
 # ARGUMENTS:
-#   magi_num          numeric vector of MAGI in 2024 dollars (one per row).
+#   magi_num          numeric vector of MAGI (TY2027 dollars in the simulation; one per row).
 #   filing_group_chr  character vector of filing-group labels ("single_mfs",
 #                     "mfj", "hoh", or NA_character_), same length as magi_num.
 #   pivot_table       named numeric vector of pivots, e.g.

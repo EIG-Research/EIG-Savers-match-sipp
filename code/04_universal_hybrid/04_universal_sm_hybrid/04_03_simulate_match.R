@@ -2,8 +2,8 @@
 # Author - Ben Glasner
 # research title - Saver's Match: eligibility and cost analysis (SECURE 2.0 sec 103 / IRC sec 6433)
 # research question - Under the single-line match schedule (200% at $0 MAGI, declining to 50% at the
-#                     pivot -- the design fixes the Single rate at 75% at one-half the Single
-#                     weighted-median MAGI, which places the 50% pivot at 0.6x that median -- with
+#                     pivot -- the design fixes the Single rate at 75% at two-thirds the IRS
+#                     all-single-filer median MAGI, which places the 50% pivot at 0.8x that median -- with
 #                     MFJ/HoH pivots scaled by the SM lower-threshold ratios), what is the cost,
 #                     eligible-worker count, and distributional incidence?
 #
@@ -110,9 +110,9 @@ policy_params <- list(
   # schedule and does not read these; they are kept in sync purely for
   # documentation. 2026-06-08 redesign: floor is 200 percent at $0 MAGI (down
   # from the 2026-05-28 300 percent), and the 50 percent point sits at the pivot,
-  # which the design anchors by fixing the Single rate at 75 percent at one-half
-  # the Single weighted-median MAGI (placing the 50 percent pivot at 0.6x that
-  # median and the 0 percent endpoint at (4/3)x pivot = 0.8x the median).
+  # which the design anchors (2026-06-11) by fixing the Single rate at 75 percent
+  # at two-thirds the IRS all-single-filer median MAGI (placing the 50 percent
+  # pivot at 0.8x that median and the 0 percent endpoint at (4/3)x pivot = 1.067x).
   match_rate_floor_pp_num  = 200,
   match_rate_pivot_pp_num  = 50,
   takeup_no_auto_num       = 0.057,
@@ -349,8 +349,9 @@ headline_universal_result_list <- run_scenario(
 # Take the eligible count from the single unrounded universe total (the DC-access
 # and universal-account branches partition the eligible universe), rather than
 # summing the two separately-rounded branch counts -- this avoids a 0.01M
-# double-rounding artifact that otherwise made the headline eligible count (46.06M)
-# disagree with the single-population sensitivity rows (46.07M).
+# double-rounding artifact that otherwise made the headline eligible count
+# disagree with the single-population sensitivity rows (44.47M under the current
+# IRS-anchored design).
 headline_eligible_M_num     <- round(eligible_wgt_M_num, 2L)
 headline_participants_M_num <- headline_dc_result_list$participant_count_M_num +
                                  headline_universal_result_list$participant_count_M_num

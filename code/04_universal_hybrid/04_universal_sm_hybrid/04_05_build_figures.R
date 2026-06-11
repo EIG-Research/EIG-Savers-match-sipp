@@ -127,9 +127,9 @@ simulation_tbl    <- read_parquet(file.path(path_data_processed_chr, "simulation
 ###################################################################################
 ###             2) Figure 1: Match-Rate-by-MAGI Schedule                        ###
 ###################################################################################
-# Grid runs to $90K -- just past the widest phase-down (MFJ endpoint ~$80.8K
-# under the 75%@half-median design), so the x-axis ends where the match rate has
-# reached 0 for every filing group without trailing dead space.
+# Grid runs to $90K -- just past the widest phase-down (MFJ endpoint ~$86K
+# under the 75%@two-thirds-median IRS-anchored design), so the x-axis ends where
+# the match rate has reached 0 for every filing group without trailing dead space.
 magi_grid_num <- seq(0, 90000, by = 500)
 
 schedule_rows_list <- list()
@@ -206,12 +206,12 @@ fig1_gg <- ggplot2::ggplot(schedule_tbl, ggplot2::aes(
   ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"),
                                breaks = seq(0, 200, by = 50)) +
   ggplot2::labs(
-    x = "MAGI (2024 dollars)",
+    x = "MAGI (TY2027 dollars)",
     y = "Match rate (%)",
     color = NULL, linetype = NULL,
     title = "Figure 1. Match rate by MAGI: Expanded Policy vs. current Saver's Match",
     subtitle = paste0("Expanded Policy: a single straight line per filing group — 200% at $0 MAGI, ",
-                      "declining to 0% at (4/3) × pivot; Single rate is 75% at one half the Single median"),
+                      "declining to 0% at (4/3) × pivot; Single rate is 75% at two-thirds the IRS single-filer median"),
     caption = "Source: Author's analysis of SIPP 2024 Wave 1."
   ) +
   ggplot2::theme_minimal(base_size = 11) +

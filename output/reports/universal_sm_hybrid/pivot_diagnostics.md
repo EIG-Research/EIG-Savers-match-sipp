@@ -1,23 +1,23 @@
 # 04 Pivot Diagnostics
 
-Computed at: 2026-06-09 16:49:23.122391
+Computed at: 2026-06-11 14:08:53.732448
 
 ## Method
 
-The schedule is a single straight line with a 200 percent floor at $0 MAGI. The **design anchor** fixes the Single rate at **75 percent at one half the Single weighted-median MAGI** (the median is computed inside the 04_01 universe via `Hmisc::wtd.quantile(probs = 0.5)`). Holding the floor fixed, that anchor places the 50 percent crossing (the pivot `compute_match_rate()` keys on) at 0.6 x the Single median and the 0 percent endpoint at (4/3) x pivot = 0.8 x the Single median. MFJ and HoH pivots are scaled from the Single pivot using the statutory Saver's Match lower-threshold ratios from `sm_calibration_constants()$sm_lower`:
+The schedule is a single straight line with a 200 percent floor at $0 MAGI. Per design decision D1 (2026-06-11) the **design anchor** fixes the Single rate at **75 percent at two-thirds the IRS all-single-filer median AGI** (SOI Table 1.2, single + MFS returns; TY2023 median $35789 projected to TY2027 $40294 at x1.1259). The policy is anchored to administrative IRS data, not the SIPP sample (SIPP relegated to simulation only; the SIPP in-universe single median was $54799, shown for comparison). Holding the floor fixed, the two-thirds anchor places the 50 percent crossing (the pivot `compute_match_rate()` keys on) at 0.8 x the IRS single median and the 0 percent endpoint at (4/3) x pivot = 1.067 x the median. MFJ and HoH pivots are scaled from the Single pivot using the statutory Saver's Match lower-threshold ratios from `sm_calibration_constants()$sm_lower`:
 
 - **MFJ ratio:** sm_lower[MFJ] / sm_lower[Single] = 41000 / 20500 = 2.00
 - **HoH ratio:** sm_lower[HoH] / sm_lower[Single] = 30750 / 20500 = 1.50
 
-Endpoint (where the rate hits zero) = (4/3) x pivot for each filing group. The Single pivot is 0.6 x the Single median, so the Single endpoint is 0.8 x the Single median. For MFJ and HoH the pivot is 2.0 x and 1.5 x the Single pivot, and the endpoint is (4/3) x that pivot (not tied to that group's own data median).
+Endpoint (where the rate hits zero) = (4/3) x pivot for each filing group. The Single pivot is 0.8 x the IRS single median, so the Single endpoint is 1.067 x that median. For MFJ and HoH the pivot is 2.0 x and 1.5 x the Single pivot, and the endpoint is (4/3) x that pivot. The `data median` column below is the SIPP in-universe median for each group (the population the simulation scores), shown against the IRS-anchored frontier.
 
 ## Pivot table
 
 | Filing group | SM ratio | N (rows) | Weighted (M) | Data median MAGI | Pivot | Endpoint | Endpoint - data median | Slope (pp/$) |
 |---|---|---|---|---|---|---|---|---|
-| single_mfs | 1.00 | 6142 | 62.11 | $54799 | $32879 | $43839 | $-10960 | -0.00456 |
-| mfj | 2.00 | 7594 | 70.95 | $154781 | $65758 | $87678 | $-67103 | -0.00228 |
-| hoh | 1.50 | 1225 | 12.28 | $55061 | $49319 | $65758 | $10697 | -0.00304 |
+| single_mfs | 1.00 | 6142 | 62.11 | $54799 | $32235 | $42980 | $-11818 | -0.00465 |
+| mfj | 2.00 | 7594 | 70.95 | $154781 | $64471 | $85961 | $-68820 | -0.00233 |
+| hoh | 1.50 | 1225 | 12.28 | $55061 | $48353 | $64471 | $9410 | -0.00310 |
 
 ## Interpretation
 

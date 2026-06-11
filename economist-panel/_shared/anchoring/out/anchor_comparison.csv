@@ -1,0 +1,5 @@
+"label","single_median","single_pivot","single_endpoint"
+"IRS anchor: Single only",34943.8246640534,20966.294798432,27955.0597312427
+"IRS anchor: Single + MFS",35788.9076372119,21473.3445823271,28631.1261097695
+"Current SIPP single_mfs median (TY2027$)",54798.648,32879.1888,43838.9184
+"IRS Single+MFS, projected to TY2027$",40294.149381889,24176.4896291334,32235.3195055112

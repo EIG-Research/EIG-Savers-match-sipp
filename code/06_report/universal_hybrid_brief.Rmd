@@ -49,10 +49,14 @@ sim    <- as.data.frame(read_parquet(file.path(dp, "simulation_results.parquet")
 funnel <- read_csv(file.path(rep_dir, "universe_funnel.csv"), show_col_types = FALSE)
 
 get_scen <- function(nm) scen[scen$scenario_name_chr == nm, , drop = FALSE][1, ]
-headline <- get_scen("headline_sipp_observed_conditional")
-dc_route <- get_scen("headline_dc_access_row_level")
-uv_route <- get_scen("headline_universal_account_uniform")
-s_auto80 <- get_scen("sens_auto_enroll_80pct")
+# Headline level of interest: automatic enrollment at 80 percent participation.
+# The auto-enrollment literature (Madrian-Shea; state auto-IRA programs) and the
+# review panel both judge the SIPP-observed conditional rate (~59 percent) to
+# understate participation under a sticky payroll default, so the 80 percent
+# auto-enrollment case is the central estimate; the observed-conditional case is
+# carried as a behavioral lower bound and full participation as the upper bound.
+headline <- get_scen("sens_auto_enroll_80pct")
+obs_cond <- get_scen("headline_sipp_observed_conditional")
 s_full   <- get_scen("sens_full_participation_100pct")
 
 pv <- function(grp, col) pivots[[col]][pivots$filing_group_chr == grp]
@@ -110,7 +114,10 @@ route_tbl <- route_tbl[order(-route_tbl$elig_M), ]
 ## ---- Generosity anchors for a single filer ----------------------------------
 single_pivot    <- pv("single_mfs", "pivot_num")
 single_endpoint <- pv("single_mfs", "endpoint_num")
-single_median   <- pv("single_mfs", "data_median_magi_num")
+single_median   <- pv("single_mfs", "data_median_magi_num")   # SIPP in-universe median (diagnostic)
+# The policy anchor is the IRS all-single-filer median; the pivot is set at 0.8x
+# it (the "75% rate at two-thirds the median" rule), so recover it for reference.
+irs_single_median <- single_pivot / 0.8
 # Schedule: rate(M) = 200 - (150 / pivot) * M (percent). Required own contribution
 # to capture the full $1,000 credit = $1,000 / (rate / 100). The helper returns NA
 # where the rate is non-positive (at/above the endpoint) so the cap-divide never
@@ -152,53 +159,84 @@ img{max-width:100%;height:auto;margin:8px 0;}
 </style>
 
 <p class="lede">A universal, automatic retirement account paired with a redesigned federal
-match would extend a meaningful savings subsidy to roughly `r mil(headline$eligible_count_M_num)`
-low- and moderate-income workers at an estimated headline cost of about `r bil(headline$annual_cost_M_num)` per year.</p>
+match would extend a positive savings subsidy to roughly `r mil(headline$eligible_count_M_num)`
+low- and moderate-income workers. Under automatic enrollment — the design's central assumption —
+about `r mil(headline$participant_count_M_num)` would participate, at an estimated federal cost of
+about `r bil(headline$annual_cost_M_num)` per year.</p>
 
 <div class="why">
 **Why it matters.** The savings match enacted in federal law rewards only workers who already
-hold a workplace retirement account and who contribute enough to claim it. Workers without a plan
-at work — independent contractors, gig workers, and employees of firms that offer nothing — are
-left out, and the lowest earners gain the least. The design described here pairs the match with a
-savings account that every worker can use, raises the subsidy rate sharply at the bottom of the
-income scale, and lowers the amount a worker must set aside to receive the full credit.
+hold a workplace retirement account and who contribute enough to claim it. The binding flaw is not
+the size of the match but its delivery: it has nowhere to land for a worker who has no account, so
+the lowest earners — independent contractors, gig workers, and employees of firms that offer
+nothing — gain the least. Roughly three-fifths of the dollars the enacted match would otherwise
+direct to the bottom never arrive, because those workers lack the account the match must be
+deposited into. The design described here closes that gap by pairing the match with a savings
+account that every worker can use, raising the subsidy rate sharply at the bottom of the income
+scale, and lowering the amount a worker must set aside to receive the full credit.
 </div>
 
 ## What the policy does
 
-The proposal has two moving parts. First, every covered worker is automatically enrolled — at a
-default contribution of three percent of earnings — into a retirement account. Workers already
-covered by a qualifying workplace plan keep that plan; everyone else is routed into a new universal
-account modeled on a low-cost, portable federal design. This closes the access gap that keeps the
-current match from reaching the workers it was meant to help.
+The proposal has two moving parts, and the first does most of the work. Every covered worker is
+automatically enrolled — at a default contribution of three percent of earnings — into a retirement
+account. Workers already covered by a qualifying workplace plan keep that plan; everyone else,
+including the self-employed and independent and platform workers, is routed into a new universal
+account modeled on a low-cost, portable federal design. The self-employed, who have no payroll to
+deduct from, reach the account through their estimated-tax payments or through the platforms they
+work on, under a safe harbor so that offering the benefit does not reclassify a contractor as an
+employee. This automatic account is what closes the access gap; it is the active ingredient, and
+the bulk of the program's reach comes from supplying an account and a default contribution rather
+than from the size of the subsidy.
 
 Second, the federal match itself is redesigned. Rather than a flat 50 percent match that stops at a
 fixed income cutoff, the match rate becomes a single declining line that depends on a worker's
-income and tax-filing status. The rate begins at 200 percent for the lowest earners — three federal
-dollars for every one the worker saves becomes one dollar of credit for every fifty cents
-saved — and falls steadily as income rises, reaching zero at the top of each eligibility band. The
-federal credit is capped at `r d0(1000)` per individual, so a married couple in which both spouses
-work can receive up to `r d0(2000)` between them.
+income and tax-filing status. The rate begins at 200 percent for the lowest earners — one dollar of
+federal credit for every fifty cents saved — and falls steadily as income rises, reaching zero at
+the top of each eligibility band. The federal credit is capped at `r d0(1000)` per individual, so a
+married couple in which both spouses work can receive up to `r d0(2000)` between them; because the
+schedule is set by joint income but the cap applies per person, two equal earners are treated the
+same married or single.
 
-Because the schedule is anchored to the income distribution rather than to fixed dollar thresholds,
-the eligibility band scales automatically with filing status and can be re-anchored as incomes
-change over time.
+Two design choices keep the match simple to administer and easy on work incentives. The match is
+computed on a worker's *prior-year* income, so the amount is known when the contribution is made,
+requires no year-end reconciliation or clawback, and does not shrink because a worker earned a
+raise during the year. And a worker's own contributions remain accessible — they can be withdrawn
+without penalty, as under a Roth account — so enrolling does not lock away savings a low-income
+household may need in an emergency; only the federal match carries a short holding period before it
+vests.
 
-```{r schedule-fig, out.width="86%"}
-sched_png <- file.path(fig_dir, "match_rate_by_magi.png")
-if (file.exists(sched_png)) knitr::include_graphics(sched_png)
+```{r lens01-fig, out.width="92%"}
+lens01_png <- file.path(fig_dir, "lens_01_match_rate.png")
+if (file.exists(lens01_png)) knitr::include_graphics(lens01_png)
 ```
-<p class="cap">The redesigned match rate (solid) against the current-law Saver's Match (dashed),
-by filing status. The redesigned rate is far higher at low incomes and reaches more of the
-distribution.</p>
+<p class="cap">The redesigned match rate (solid green) against the current-law Saver's Match (dashed
+gold), for a single filer. The current match is a flat 50 percent that ends at a low fixed cutoff;
+the redesign starts at 200 percent for the lowest earners and reaches far further up the income
+scale.</p>
 
 ### Where the eligibility band falls
 
 Each filing status has a *pivot* — the income level at which the match rate has declined to 50
 percent. Below the pivot the rate is higher (rising to 200 percent at zero income); above it the rate
-keeps falling along the same line until it reaches zero, where the match ends. Because the pivot is
-set from the income distribution rather than a fixed dollar cutoff, it scales with filing status and
-can be re-anchored over time.
+keeps falling along the same line until it reaches zero, where the match ends. The same geometry
+applies to all three filing groups, scaled by the statutory ratios the enacted Saver's Match already
+uses (head-of-household and joint bands are 1.5 and 2.0 times the single band).
+
+```{r schedule-allfig, out.width="96%"}
+sched_png <- file.path(fig_dir, "match_rate_by_magi.png")
+if (file.exists(sched_png)) knitr::include_graphics(sched_png)
+```
+<p class="cap">The redesigned match rate (solid) against the current-law Saver's Match (dashed), by
+filing status. The redesigned rate is far higher at low incomes and reaches more of the
+distribution in every filing group.</p>
+
+Rather than the fixed dollar cutoffs of current law — which Congress must legislate upward as wages
+rise, and which otherwise let coverage erode — the band is anchored to administrative income data:
+the single-filer pivot is set from the IRS median income for single filers (at two-thirds of that
+median), indexed each year to chained-CPI inflation, and re-anchored to fresh IRS data about once a
+decade. This keeps the policy on a transparent, replicable basis that a budget agency can reproduce,
+and keeps the eligibility band tracking incomes without repeated acts of Congress.
 
 ```{r schedule-tbl}
 sched <- data.frame(
@@ -221,17 +259,12 @@ Survey weights are applied throughout so that every figure reflects the national
 than the sample count.
 
 The analysis begins with the roughly `r mil(adults_18p_M)` U.S. residents age 18 or older and
-narrows to the working population most relevant to the policy: people with earnings and a
-determinable tax-filing status, after setting aside dependents and full-time students. That leaves
-a universe of about `r mil(universe_M)` workers. Within it, an estimated
-`r mil(headline$eligible_count_M_num)` workers — close to `r pct(elig_share)` of the universe — fall
-inside the redesigned eligibility band and would qualify for a positive match.
-
-```{r funnel-fig, out.width="74%"}
-fn_png <- file.path(fig_dir, "universe_funnel.png")
-if (file.exists(fn_png)) knitr::include_graphics(fn_png)
-```
-<p class="cap">From all adults to the working population that the match can reach.</p>
+narrows in steps to the working population the policy is built for: of those adults, about
+`r mil(earners_M)` have earnings, and after setting aside dependents and full-time students and
+keeping only those with a determinable tax-filing status, a universe of about `r mil(universe_M)`
+workers remains. Within it, an estimated `r mil(headline$eligible_count_M_num)` workers — close to
+`r pct(elig_share)` of the universe — fall inside the redesigned eligibility band and would qualify
+for a positive match.
 
 Eligible workers reach the match through one of two channels. Those who already hold a workplace
 plan claim it there; the rest reach it through the new universal account. The universal account
@@ -251,6 +284,18 @@ kable(rt, align = c("l","r","r","r"), row.names = FALSE) |>
   kable_styling(full_width = TRUE, bootstrap_options = c("condensed"))
 ```
 
+The federal dollars land where the need is greatest. Of the full-participation match, an estimated
+`r pct(bottom3_share)` flows to the lowest-earning 30 percent of the workforce (the bottom three
+income deciles), and nearly all of it to the lower-earning half. The highest-income workers receive
+nothing, because the match phases out entirely before their income range begins.
+
+```{r incidence-fig, out.width="74%"}
+inc_png <- file.path(fig_dir, "incidence_by_decile.png")
+if (file.exists(inc_png)) knitr::include_graphics(inc_png)
+```
+<p class="cap">Share of federal match dollars by income decile across the full workforce (1 = lowest).
+The subsidy is weighted toward lower-income savers; higher deciles receive little or nothing.</p>
+
 ## How generous it is
 
 The redesign is most visible at the bottom of the income scale, where the current match does the
@@ -265,50 +310,73 @@ least. Three measures make the point, using a single filer as the example.
   maximum on a fraction of that amount, which matters because lower-income workers were never
   likely to set aside `r d0(2000)`.
 - **A larger average award.** Across all participants the redesign delivers an average federal
-  match of about `r d0(headline$avg_match_per_person_num)` per year`r if (cl_avail) paste0(", set against roughly ", d0(cl_avg), " per worker under the current-law match at full participation in the same population. The two averages rest on different participation assumptions, so read this as a broad comparison rather than a like-for-like one") else ""`.
+  match of about `r d0(headline$avg_match_per_person_num)` per year`r if (cl_avail) paste0(", set against roughly ", d0(cl_avg), " per worker under the current-law match at full participation in the same population") else ""`.
 
-The federal dollars are concentrated where the need is greatest. Of the full-participation match,
-an estimated `r pct(bottom3_share)` flows to the lowest-earning 30 percent of the workforce (the
-bottom three income deciles), and nearly all of it to the lower-earning half. The highest-income
-workers receive nothing, because the match phases out entirely before their income range begins.
+The high rate at the bottom is a deliberate choice. A dollar is hardest to move out of day-to-day
+consumption for the lowest earners, so the schedule over-matches there — a 200 percent rate — to make
+a small contribution worth enough to pull a household into saving at all. The two figures below
+trace what that means for the worker's side of the bargain: how much a single filer must set aside
+to capture the full `r d0(1000)` credit, in dollars and as a share of earnings.
 
-```{r incidence-fig, out.width="74%"}
-inc_png <- file.path(fig_dir, "incidence_by_decile.png")
-if (file.exists(inc_png)) knitr::include_graphics(inc_png)
+```{r lens02-fig, out.width="92%"}
+lens02_png <- file.path(fig_dir, "lens_02_required_contribution.png")
+if (file.exists(lens02_png)) knitr::include_graphics(lens02_png)
 ```
-<p class="cap">Share of federal match dollars by income decile across the full workforce (1 = lowest).
-The subsidy is weighted toward lower-income savers; higher deciles receive little or nothing.</p>
+<p class="cap">The out-of-pocket contribution needed to receive the full `r d0(1000)` match. At the
+bottom of the band just `r d0(contrib_at_0)` unlocks it; the required amount rises with income to
+`r d0(2000)` at the pivot and then climbs out of reach as the match rate falls toward zero. The
+current-law match (gold) requires the full `r d0(2000)` and only below a low fixed cutoff.</p>
+
+```{r lens03-fig, out.width="92%"}
+lens03_png <- file.path(fig_dir, "lens_03_required_share_of_earnings.png")
+if (file.exists(lens03_png)) knitr::include_graphics(lens03_png)
+```
+<p class="cap">The same requirement as a share of earnings is U-shaped, bottoming at about
+`r pct(share_at_100, 1)` of earnings near `r d0(m_at_100)` of income — just above the three percent
+automatic default, so a worker who nudges their contribution a little above the default captures the
+full credit across the middle of the band. Under current law (gold) the cap is reachable only at the
+very bottom.</p>
 
 ## What it costs
 
-The headline estimate is an annual federal cost of about `r bil(headline$annual_cost_M_num)`,
-reaching `r mil(headline$participant_count_M_num)` participating savers at a take-up rate of about
-`r pct(headline$takeup_rate_num)`. Cost depends heavily on how many eligible workers actually
-participate, which is why the estimate is presented as a range rather than a single number.
+The central estimate is an annual federal cost of about `r bil(headline$annual_cost_M_num)`,
+reaching `r mil(headline$participant_count_M_num)` participating savers at an automatic-enrollment
+participation rate of `r pct(headline$takeup_rate_num)`. Participation is the single largest driver
+of cost, so the estimate is best read as a range. The lower bound applies the participation rate
+observed today among workers who already have plan access (about `r pct(obs_cond$takeup_rate_num)`) —
+a figure the evidence on automatic enrollment suggests understates how many workers stay in a sticky
+payroll default, which is why the `r pct(headline$takeup_rate_num)` auto-enrollment case is taken as
+the headline rather than the floor. The upper bound assumes every eligible worker participates.
 
 ```{r cost-tbl}
 cost <- data.frame(
   `Participation scenario` = c(
-    "Headline (observed participation behavior)",
-    "Automatic enrollment at 80 percent participation",
+    "Observed participation behavior (lower bound)",
+    "Automatic enrollment at 80 percent (headline)",
     "Full participation (upper bound)"),
-  `Take-up` = c(pct(headline$takeup_rate_num),
-                pct(s_auto80$takeup_rate_num), pct(s_full$takeup_rate_num)),
-  `Participants` = c(mil(headline$participant_count_M_num),
-                     mil(s_auto80$participant_count_M_num), mil(s_full$participant_count_M_num)),
-  `Annual cost` = c(bil(headline$annual_cost_M_num),
-                    bil(s_auto80$annual_cost_M_num), bil(s_full$annual_cost_M_num)),
+  `Take-up` = c(pct(obs_cond$takeup_rate_num),
+                pct(headline$takeup_rate_num), pct(s_full$takeup_rate_num)),
+  `Participants` = c(mil(obs_cond$participant_count_M_num),
+                     mil(headline$participant_count_M_num), mil(s_full$participant_count_M_num)),
+  `Annual cost` = c(bil(obs_cond$annual_cost_M_num),
+                    bil(headline$annual_cost_M_num), bil(s_full$annual_cost_M_num)),
   check.names = FALSE
 )
 kable(cost, align = c("l","r","r","r"), row.names = FALSE) |>
   kable_styling(full_width = TRUE, bootstrap_options = c("condensed"))
 ```
 
-Two features of the cost range stand out. The structural ceiling — the cost if every eligible
-worker participated fully — is about `r bil(s_full$annual_cost_M_num)`, so the program cannot cost
-more than that at any plausible behavioral response. And the headline sits well below that ceiling
-because participation, while high under automatic enrollment, is not universal — the policy's reach
-depends on the automatic account doing its job.
+Two features of the cost range stand out. The structural ceiling — the cost if every eligible worker
+participated — is about `r bil(s_full$annual_cost_M_num)`, so the program cannot cost more than that
+at any plausible behavioral response. And because the match is paid only on the contributions
+workers actually make, cost tracks participation closely: the program's reach, and its price, both
+depend on the automatic account doing its job. These figures are gross transfer costs. Over a longer
+horizon part of that cost is recovered: workers who reach retirement with more savings draw less on
+means-tested programs such as Medicaid and Supplemental Security Income, an offset a budget-model
+analysis of the closely related Retirement Savings for Americans Act estimated grows large enough to
+turn that proposal net-positive after several decades. The cap on the per-person credit here bounds
+the gross cost well below that proposal's, so the same direction of offset should apply at lower
+expense.
 
 ```{r contrast, eval=cl_avail}
 cat("### How it compares with current law\n\n")
@@ -323,15 +391,15 @@ contrast <- data.frame(
     d0(cl_avg)),
   `This proposal` = c(
     "Up to 200%",
-    "Anchored to the income distribution",
+    "Anchored to the IRS median by filing status",
     mil(headline$eligible_count_M_num),
-    paste0(bil(headline$annual_cost_M_num), " (headline)"),
-    d0(headline$avg_match_per_person_num)),
+    bil(s_full$annual_cost_M_num),
+    d0(s_full$avg_match_per_person_num)),
   check.names = FALSE
 )
 print(kable(contrast, align = c("l","l","l"), row.names = FALSE) |>
   kable_styling(full_width = TRUE, bootstrap_options = c("condensed")))
-cat("\n\nThe current-law comparison applies the same population and a full-participation assumption, so the difference reflects design alone.\n")
+cat("\n\nBoth columns apply the same working population at full participation, so the difference reflects design alone — a higher subsidy rate at the bottom, an income-anchored band reaching more workers, and a larger average award.\n")
 ```
 
 ## How the estimates were produced, and what to keep in mind
@@ -347,16 +415,21 @@ show what the policy rules would cost and whom they would reach under stated par
 assumptions, not a behavioral forecast of how saving or work decisions might change. Participation is
 the largest source of uncertainty, which is why the cost is reported as a range; and the federal
 match is paid only on contributions workers actually make, so the estimates assume the automatic
-three percent default is contributed. Because the underlying data are a sample of households, the
-figures are point estimates rather than exact counts; they are not reported with statistical
-confidence intervals, so small differences should not be over-interpreted. The income measure is
-drawn from a household survey and approximates — but does not exactly equal — the income concept a
-tax agency would use, so the
-eligibility thresholds would shift modestly under a tax-administered version. The survey's incomes
-are aged forward to the policy's first year for dollar comparability, but the population's
-composition and saving behavior are not re-projected. The estimates also leave aside administrative
-costs, the cost of running the universal account, and any rules governing early withdrawals; each
-matters for an implementing statute but not for the headline transfer cost reported here.
+three percent default is contributed. They also do not model how employers might respond — in
+particular, whether some small firms would drop their own plans once a subsidized universal account
+exists, a displacement risk that independent analyses of similar federal-account proposals have
+flagged and that would reduce net new saving. Because the underlying data are a sample of
+households, the figures are point estimates rather than exact counts and carry no statistical
+confidence intervals, so small differences should not be over-interpreted. The eligibility band is
+anchored to administrative IRS income data, but each worker's income is measured in a household
+survey that approximates — and is drawn from a somewhat different population than — the tax records a
+revenue agency would use, so a tax-administered version would shift the counts modestly; the survey's
+incomes are aged forward to the policy's first year for dollar comparability, but the population's
+composition and behavior are not re-projected. Finally, the design's withdrawal rules follow the
+portable-account model of pending legislation — a worker's own contributions stay accessible, while
+the federal match must season briefly before it vests — but the leakage those rules permit, the cost
+of administering the universal account, and the standing up of that account are not separately
+modeled here; each matters for an implementing statute more than for the headline transfer cost.
 
 <p class="foot">
 Source: Author's analysis of a nationally representative U.S. household survey (2024), projected to
