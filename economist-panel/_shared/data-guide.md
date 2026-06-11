@@ -66,15 +66,19 @@ Canonical frame behind the current-law (1.00×) and expanded-threshold (1.25×/1
 - `output/tables/universal_sm_hybrid/hybrid_headline.xlsx`, `hybrid_by_route.xlsx`, `hybrid_distributional_incidence.xlsx`
 - `output/tables/main/sm_jct_replication_scenarios.xlsx` (current-law 1.00× row: 33.08M eligible, $9.19B full participation, $278 avg match)
 
-> **Superseded 2026-06-11 (D1 re-anchoring).** The numbers in this section are the basis the ten panelists analyzed. The production model was subsequently re-anchored to the IRS single-filer median (75% at ⅔ of the median); the current canonical headline is **44.47M eligible / $14.15B / $23.87B ceiling**, pivots Single $32,235 / HoH $48,353 / MFJ $64,471. See `economist-panel/DESIGN-DECISIONS.md` (D1) and `_shared/anchoring/FINDINGS.md`. The panel assessments below were written against the pre-re-anchoring figures and are intentionally preserved as historical analysis.
+## Canonical headline numbers — CURRENT DESIGN (use these for any re-review; snapshot 2026-06-11)
 
-## Canonical headline numbers (snapshot 2026-06-09; superseded — see note above)
+The design was revised through the Tier 3 decisions and re-run in production. **These are the numbers a re-review must score against** (the first-round panel assessments in `NN-*/` were written against the earlier figures — see the historical note below — and should not be re-scored as if current).
 
-- Universe: 145.34M workers; eligible under hybrid: 46.07M (31.7 percent).
-- Headline cost $14.9B/yr at 59.8 percent take-up; $543 average match per participant; full-participation ceiling $24.9B.
-- Routing: 26.65M (57.9 percent) of eligible default to the federal universal account; 19.41M via employer plans.
-- Match schedule: 200 percent at zero MAGI, linear to 50 percent at the pivot, zero at 4/3 × pivot; $1,000 per-individual cap; 3 percent default contribution.
-- Current-law §6433 contrast: 33.08M eligible, $9.2B full participation, $278 average match, 50 percent rate, $20,500/$30,750/$41,000 phaseout starts.
+- Universe: 145.34M workers; eligible under hybrid: **44.47M (~30.6 percent)**.
+- Cost ladder: **$14.15B/yr at 59.0 percent take-up (SIPP-observed conditional, the spec's conservative headline); $19.09B at 80 percent auto-enrollment (the brief's central case); $23.87B full-participation ceiling.** Average match ~$537–539 per participant.
+- Eligibility schedule: anchored to the **IRS all-single-filer median MAGI, 75 percent rate at two-thirds the median** → Single pivot **$32,235** / endpoint $42,980; HoH pivot **$48,353** / endpoint $64,471; MFJ pivot **$64,471** / endpoint $85,961. 200 percent floor at zero MAGI; $1,000 per-individual cap; C-CPI-U-indexed, re-anchored each decade.
+- Routing: 25.98M (58.4 percent) of eligible default to the federal universal account; 18.49M (41.6 percent) via employer plans.
+- Determination/withdrawals: prior-year MAGI basis; own contributions Roth-accessible; federal match vests after a six-month hold. Default 3 percent (graduated 1/2/3 percent by FPL option). Self-employed via estimated-tax / 1099 / platform rails.
+- Current-law §6433 contrast (full participation): 33.08M eligible, $9.2B, $278 average match, 50 percent rate, $20,500/$30,750/$41,000 phaseout starts.
+- Full detail and rationale: `economist-panel/DESIGN-DECISIONS.md` (D1–D11), `_shared/anchoring/FINDINGS.md`, and the proposal spec / companion brief.
+
+> **Historical note (first-round basis).** The ten first-round assessments analyzed the pre-revision model: 46.07M eligible, $14.9B headline / $24.9B ceiling, $543 average match, SIPP-median ½-anchor pivots ($32,879 / $49,319 / $65,758). Those assessments are intentionally preserved as the record of that review and are *not* updated; a re-review should treat them as the prior round and use the current numbers above.
 
 ## Known measurement caveats (from the legal-scholar review — do not rediscover these as if new)
 
