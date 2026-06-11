@@ -1,0 +1,801 @@
+          THRIFT SAVINGS FUND
+
+          FINANCIAL STATEMENTS AND
+       INDEPENDENT AUDITOR'S REPORT
+
+For the Years Ended December 31, 2023 and 2022
+TABLE OF CONTENTS
+
+                   Page
+
+INDEPENDENT AUDITOR'S REPORT......................................................................................1-2
+FINANCIAL STATEMENTS ............................................................................................................ 3
+
+    Statements of Net Assets Available for Benefits ............................................................................ 4
+    Statements of Changes in Net Assets Available for Benefits ......................................................... 5
+    Notes to Financial Statements ....................................................................................................6-13
+
+         Appendix 1 .............................................................................................................................. 14
+         Appendix 2 .............................................................................................................................. 15
+1415 West Diehl Road, Suite 400
+Naperville, IL 60563
+630.566.8400
+
+                                     INDEPENDENT AUDITOR'S REPORT
+
+  Management of the Board and Executive Directors
+  Federal Retirement Thrift Investment Board
+  Washington, DC
+
+  Opinion on the 2023 Financial Statements
+
+  We have audited the accompanying financial statements of Thrift Savings Fund (the Fund), which
+  comprise the statement of net assets available for benefits as of December 31, 2023, and the related
+  statement of changes in net assets available for benefits for the year then ended, and the related notes
+  to the financial statements (2023 financial statements).
+
+  In our opinion, the 2023 financial statements referred to above present fairly, in all material respects,
+  the net assets available for benefits of the Fund as of December 31, 2023, and the changes in its net
+  assets available for benefits for the year then ended, in accordance with accounting principles generally
+  accepted in the United States of America.
+
+  Basis for Opinion on the 2023 Financial Statements
+
+  We conducted our audit in accordance with auditing standards generally accepted in the United States
+  of America (GAAS). Our responsibilities under those standards are further described in the Auditor's
+  Responsibilities for the Audit of the 2023 Financial Statements section of our report. We are required
+  to be independent of the Fund and to meet our other ethical responsibilities, in accordance with the
+  relevant ethical requirements relating to our audit. We believe that the audit evidence we have obtained
+  is sufficient and appropriate to provide a basis for our audit opinion.
+
+  Responsibilities of Management for the 2023 Financial Statements
+
+  Management is responsible for the preparation and fair presentation of the financial statements in
+  accordance with accounting principles generally accepted in the United States of America; and for the
+  design, implementation, and maintenance of internal control relevant to the preparation and fair
+  presentation of financial statements that are free from material misstatement, whether due to fraud or
+  error.
+
+  In preparing the financial statements, management is required to evaluate whether there are conditions
+  or events, considered in the aggregate, that raise substantial doubt about the Fund's ability to continue
+  as a going concern within one year after the date that the financial statements are issued.
+
+                                                              1
+Auditor's Responsibilities for the Audit of the 2023 Financial Statements
+
+Our objectives are to obtain reasonable assurance about whether the 2023 financial statements as a
+whole are free from material misstatement, whether due to fraud or error, and to issue an auditor's
+report that includes our opinion. Reasonable assurance is a high level of assurance but is not absolute
+assurance and therefore is not a guarantee that an audit conducted in accordance with GAAS will
+always detect a material misstatement when it exists. The risk of not detecting a material misstatement
+resulting from fraud is higher than for one resulting from error, as fraud may involve collusion,
+forgery, intentional omissions, misrepresentations, or the override of internal control. Misstatements
+are considered material if there is a substantial likelihood that, individually or in the aggregate, they
+would influence the judgment made by a reasonable user based on the financial statements.
+
+In performing an audit in accordance with GAAS, we:
+
+    · Exercise professional judgment and maintain professional skepticism throughout the audit.
+
+    · Identify and assess the risks of material misstatement of the financial statements, whether due
+         to fraud or error, and design and perform audit procedures responsive to those risks. Such
+         procedures include examining, on a test basis, evidence regarding the amounts and disclosures
+         in the financial statements.
+
+    · Obtain an understanding of internal control relevant to the audit in order to design audit
+         procedures that are appropriate in the circumstances, but not for the purpose of expressing an
+         opinion on the effectiveness of the Fund's internal control. Accordingly, no such opinion is
+         expressed.
+
+    · Evaluate the appropriateness of accounting policies used and the reasonableness of significant
+         accounting estimates made by management, as well as evaluate the overall presentation of the
+         financial statements.
+
+    · Conclude whether, in our judgment, there are conditions or events, considered in the aggregate,
+         that raise substantial doubt about the Fund's ability to continue as a going concern for a
+         reasonable period of time.
+
+We are required to communicate with those charged with governance regarding, among other matters,
+the planned scope and timing of the audit, significant audit findings, and certain internal control-
+related matters that we identified during the audit.
+
+Other Matter
+
+Auditor's Report on the 2022 Financial Statements
+
+The 2022 financial statements of the Fund were audited by predecessor auditors whose report dated
+August 2, 2023, expressed an unmodified opinion on those 2022 financial statements.
+
+Naperville, IL
+June 12, 2024
+
+                                                           2
+FINANCIAL STATEMENTS
+
+                      3
+     THRIFT SAVINGS FUND
+
+Statements of Net Assets Available for Benefits
+       As of December 31, 2023 and 2022
+                   (In thousands)
+
+ASSETS:                                                                   2023             2022
+ Investments, at fair value:
+                                                                     $845,413,647     $725,861,539
+ Receivables:
+   Employer contributions                                                  515,846          515,088
+   Participant contributions                                             1,086,627        1,057,330
+   Notes receivable from participants (loans)                            9,803,627        8,828,022
+   Accrued interest
+   Due for securities sold                                                   73,735           31,495
+                                                                           436,806          700,776
+         Total receivables                                             11,916,641       11,132,711
+
+  Furniture, equipment, and leasehold improvements,                          2,321            5,292
+    net of accumulated depreciation and amortization                           299              566
+    of $5,086 in 2023 and $8,123 in 2022
+                                                                     857,332,908      737,000,108
+ Other assets
+        Total assets                                                  42,169           33,862
+                                                                       5,357            5,449
+LIABILITIES:                                                         264,570          182,971
+ Accounts payable                                                    102,271           12,043
+ Accrued payroll and benefits
+ Benefits and participant loans payable                              414,367          234,325
+ Due for securities purchased
+         Total liabilities                                                   (3,082)          (3,141)
+                                                                     $856,915,459     $736,762,642
+FUNDS RESTRICTED FOR THE PURCHASE OF FIDUCIARY
+INSURANCE
+
+NET ASSETS AVAILABLE FOR BENEFITS
+
+See notes to financial statements and Independent Auditors' Report.
+
+                                               4
+                         THRIFT SAVINGS FUND
+
+               Statements of Changes in Net Assets Available for Benefits
+                        Years Ended December 31, 2023 and 2022
+                                        (In thousands)
+
+ADDITIONS:                                                              2023            2022
+ Investment income (loss):
+   Interest and dividends                                            $12,313,970      $9,321,969
+   Net appreciation (depreciation) of investments                    103,089,118    (101,807,165)
+                                                                     115,403,088     (92,485,196)
+        Net investment income (loss)
+                                                                                      27,937,098
+Contributions:                                                        31,149,789      12,346,893
+ Participant                                                          13,564,001      40,283,991
+ Employer                                                             44,713,790
+      Total contributions                                                                  17,352
+                                                                           23,797        147,058
+Participant processing fees                                              223,018     (52,036,795)
+Interest income on notes receivable from participants (loans)        160,363,693
+
+      Total additions, net of investment loss
+
+DEDUCTIONS:                                                          39,460,029     32,328,229
+ Benefits paid to participants                                          449,467        512,326
+ Administrative expenses                                                301,439        253,626
+ Notes receivable from participants declared taxable distributions
+        Total deductions                                             40,210,935     33,094,181
+
+CHANGE IN FUNDS RESTRICTED FOR THE                                              59             89
+ PURCHASE OF FIDUCIARY INSURANCE                                     120,152,817    (85,130,887)
+
+        Net increase (decrease)                                      736,762,642    821,893,529
+NET ASSETS AVAILABLE FOR BENEFITS:
+
+ Beginning of period
+
+End of period                                                        $856,915,459   $736,762,642
+
+See notes to financial statements and Independent Auditors' Report.
+
+                                                   5
+                                     THRIFT SAVINGS FUND
+
+                                           NOTES TO FINANCIAL STATEMENTS
+                                  FOR YEARS ENDED DECEMBER 31, 2023 AND 2022
+
+1. PLAN DESCRIPTION
+
+       The following description is provided for general information purposes. Participants should refer to the
+       Summary of the Thrift Savings Plan, www.tsp.gov, and applicable legislation and regulations for more
+       complete information.
+
+       General-- The Thrift Savings Plan (the Plan or the TSP) is a retirement savings and investment plan for
+       Federal employees and members of the uniformed services. It was authorized by the United States Congress
+       in the Federal Employees' Retirement System Act of 1986 (FERSA). The Plan provides Federal employees
+       and members of the uniformed services with a savings and tax benefit similar to what many private sector
+       employers offer their employees under 401(k) plans. The Plan was originally designed to be a key part of the
+       retirement package (along with a basic annuity benefit and Social Security) for employees who are covered by
+       the Federal Employees' Retirement System (FERS).
+
+       The Plan is administered by an independent Government agency, the Federal Retirement Thrift Investment
+       Board (the Agency), which is charged with operating the Plan prudently and solely in the interest of the
+       participants and their beneficiaries. Assets of the Plan are maintained in the Thrift Savings Fund (the Fund).
+
+       Federal employees, who are covered under FERS, the Civil Service Retirement System (CSRS), or equivalent
+       retirement systems (as provided by statute) and members of the uniformed services, who are covered under the
+       Blended Retirement System (BRS), or the legacy uniformed services retirement system, are eligible to join the
+       Plan immediately upon hire. Generally, FERS employees are those employees hired on or after January 1,
+       1984, while CSRS employees are employees hired before January 1, 1984, who have not elected to convert to
+       FERS. BRS participants are members of the uniformed services who first entered the uniformed services on
+       or after January 1, 2018. Members covered under the legacy uniformed services retirement system were hired
+       before January 1, 2018, with an opportunity for certain members, based on years of service, to elect coverage
+       under BRS. Each group has different rules that govern contributions. As of December 31, 2023, there were
+       approximately 7.0 million participants in the Plan, with approximately 4.1 million contributing through payroll
+       deductions. As of December 31, 2022, there were approximately 6.8 million participants in the Plan, with
+       approximately 4.0 million contributing through payroll deductions.
+
+       Contributions-- The Plan is a defined contribution plan and, as such, the law specifies how much an
+       employee may contribute and how much the employing agency must contribute to each FERS employee's or
+       BRS member's account. No participant under age 50 may contribute more than the Internal Revenue Service
+       (IRS) elective deferral limit of $22,500 in 2023 and $20,500 in 2022.1 Participants age 50 and older who are
+       already contributing the maximum amount of contributions for which they are eligible may make
+       supplemental tax-deferred catch-up contributions (up to $7,500 in 2023 and $6,500 in 2022) from their basic
+       pay. FERS and eligible BRS participants are entitled to receive agency matching contributions on the first 5
+       percent of basic pay that they contribute each pay period, according to a formula prescribed by FERSA (5
+       United States Code (U.S.C.) § 8432(c)).2 For FERS and eligible BRS participants, their employing agencies
+       also contribute an agency automatic contribution equal to 1 percent of the employee's or member's basic pay
+
+1 Members of the uniformed services who are serving in a combat zone earn tax-exempt pay. Contributions from tax-exempt pay do not count
+ towards this elective deferral limit.
+
+2 BRS participants who first entered service on or after January 1, 2018, are eligible to receive matching contributions after 2 years of service.
+ BRS participants who first entered service on December 31, 2017, or earlier and opted into the BRS are immediately eligible to receive
+ matching contributions.
+
+                                                               6
+       each pay period, as prescribed by FERSA (5 U.S.C. § 8432(c)).3 Uniformed services members may also
+       contribute up to 100% of designated special pay, incentive pay, and bonuses. These contributions are not
+       eligible for matching contributions. The Federal Government or uniformed services do not match amounts
+       contributed by CSRS employees or uniformed services members in the legacy retirement system. Civilian
+       Federal Agencies and the uniformed services are required to automatically enroll newly hired (and rehired)
+       eligible employees or members unless the employee or member makes an affirmative election not to
+       participate in the Plan or to participate at other than the default rate of five percent.4 Contributions are
+       recognized during the period in which the respective payroll deductions are made, except for rollover
+       contributions which are recognized when received.
+
+       Participants may also transfer funds from traditional individual retirement accounts (IRAs) or other eligible
+       employer plans into the Plan. The Plan also allows qualified Roth contributions and transfers from qualified
+       Roth plans.
+
+       Investments-- Pursuant to FERSA (5 U.S.C. § 8438), Plan participants are offered five investment funds: the
+       Government Securities Investment Fund (G Fund), the Fixed Income Index Investment Fund (F Fund), the
+       Common Stock Index Investment Fund (C Fund), the Small Capitalization Stock Index Investment Fund (S
+       Fund), and the International Stock Index Investment Fund (I Fund). The Agency has contracted with
+       BlackRock and Street State Global Advisors (SSGA) to act as investment managers, custodians and securities
+       lending agents for the F, C, S, and I Fund accounts.
+
+       The TSP Lifecycle Funds are asset allocation portfolios that use the Plan's existing investment funds. As
+       described in the L Funds Information Sheet on the TSP website (www.tsp.gov), the L Income Fund is
+       designed to produce current income for participants who are already withdrawing money from their
+       accounts. The L 2065 Fund is designed for participants who will begin withdrawing in 2063 or later. The
+       remaining eight L Funds are designed for participants who will begin withdrawing in certain five-year time
+       periods. For example, the L 2040 Fund is designed for participants who will begin withdrawing between 2038
+       and 2042. The asset allocations of these funds adjust quarterly, moving to a more conservative mix over time.
+       These asset allocations are based on economic assumptions regarding future investment returns, inflation,
+       economic growth, and interest rates. The asset allocations of each fund are maintained through daily
+       rebalancing to that fund's target allocation. With the help of an investment consultant, the Agency reviews the
+       assumptions underlying the asset allocations regularly.
+
+       Accenture Federal Services (AFS), as part of its recordkeeping services contract, provides a Mutual Fund
+       Window (MFW). Participants who meet certain eligibility criteria (5 Code of Federal Regulations Part
+       1601.52(a)(4)) may access mutual funds. Participants have the option to transfer money from the five
+       individual investment funds to the MFW. AFS implemented and began managing the MFW June 1, 2022.
+
+       FERSA (5 U.S.C. § 8438(b)(5)(B)) states that the FRTIB ensure that any expenses charged for use of the
+       MFW are borne solely by the participants who use the MFW. Participants that opt to participate in the MFW
+       incur a $150 fee annually. FRTIB collected annual MFW fees of $617,850 and $401,250, for the twelve
+       months ending December 31, 2023, and 2022, respectively. Accenture Federal Services was paid $391,250
+       and $254,125, for the twelve months ending December 31, 2023, and December 31, 2022, respectively, of the
+       Plan collected annual MFW fees. The Plan retained $226,600 and $147,125, respectively, of the Plan collected
+       annual MFW fees to offset administrative expenses and to ensure that participants using the MFW pay their
+       share of the administrative fees charged through the TSP G, F, C, S, and I Funds. There are also MFW
+       transaction fees charged per trade that are paid directly to AFS.
+
+3 BRS participants who first entered service on or after January 1, 2018, are eligible to receive government automatic contributions after 60 days
+ of service. BRS participants who first entered service on December 31, 2017, or earlier and opted into the BRS are immediately eligible to
+ receive government automatic contributions.
+
+4 Certain members of the uniformed services are also subject to annual automatic re-enrollment every January 1 if they have stopped making
+ contributions in the previous calendar year.
+
+                                                               7
+       Participants may allocate any portion of their contributions among the five individual investment funds and the
+       ten TSP Lifecycle Funds. If certain eligibility requirements and necessary fees are paid, participants may also
+       allocate a portion of their contributions to the MFW. Also, participants may reallocate their account balances
+       among the individual investment funds, the TSP Lifecycle Funds, and the MFW through the interfund transfer
+       process. In order to curb frequent trading and its associated costs to all TSP participants, the Agency restricts
+       the number of interfund transfers a participant can make per month. The first two fund transfers per calendar
+       month are unrestricted. After that, participants may only move money out of the F, C, S, and I Funds, the TSP
+       Lifecycle Funds, or the MFW into the G Fund.
+
+       Vesting-- Plan participants are immediately vested in all of their own contributions and attributable earnings.
+       Participants are also immediately vested in any agency matching contributions and attributable earnings. In
+       order to be vested in the agency automatic (1%) contributions, a FERS employee must have either 2 or 3 years
+       of service and a BRS participant must have 2 years of service as described in section 5 U.S.C. § 8432(g) of
+       FERSA. FERS and BRS employees who are not vested and who separate from the Federal Government forfeit
+       all agency automatic contributions and attributable earnings.5
+
+       Forfeitures-- Forfeited funds, consisting primarily of statutory forfeitures (pursuant to 5 U.S.C. § 8432(g))
+       and agency contributions forfeited due to retirement coverage corrections, the majority of which are made
+       under the Federal Erroneous Retirement Coverage Correction Act (FERCCA), totaled $42,033,352 and
+       $61,768,309 for the year ending December 31, 2023 and 2022, respectively. Under FERCCA, when a
+       participant's retirement coverage is corrected from FERS to CSRS, any excess agency contributions are
+       forfeited to the Plan. All forfeitures are used by the Plan to offset accrued administrative expenses. If the
+       forfeited funds (along with participant processing fees) are not sufficient to meet all administrative expenses,
+       earnings on investments are then charged.
+
+       Individual Accounts-- An individual account is maintained for each Plan participant. As applicable, each
+       participant's account is credited with the participant's contributions, agency automatic and matching
+       contributions, and loan repayments and charged with loans and withdrawals. The value of the participant's
+       account reflects the number of shares and the daily share prices of the funds in which the participant is
+       invested. Administrative expenses are a component of the share price calculation. The benefit to which a
+       participant is entitled is the amount of the participant's vested account balance.
+
+       Court Order Fees--Participants are charged a $600 processing fee for court orders received. The court order
+       fee is deducted from the participant's account upon receipt for processing. FRTIB collected court order fees of
+       $4,405,682 and $2,122,650 for the year ending December 31, 2023, and 2022, respectively. The court order
+       fees are collected by the Plan and paid to AFS.
+
+       Notes Receivable From Participants (loans) --Participants may apply for loans from their accounts. There
+       are two types of Plan loans: general purpose and residential. General purpose loans can be obtained for any
+       purpose, with a repayment period from 1 to 5 years. Residential loans can be obtained for the purpose of
+       purchasing a primary residence, with a repayment period from 5 to 15 years. Participant loans may only be
+       taken from participant contributions and attributable earnings. The minimum loan amount is $1,000 and the
+       maximum loan amount is $50,000. A $50 fee is deducted from the proceeds of a general-purpose loan. As of
+       June 1, 2022, a $100 fee is deducted from a residential loan. Prior to June 1, 2022, the residential loan fee was
+       $50. Loan fees of $4,596,500 for the year ending December 31, 2022, were used to offset administrative
+       expenses. Beginning June 1, 2022, loan fees no longer offset administrative expenses. Loan fees of
+       $23,796,750 and $12,755,100 for the year ending December 31, 2023, and 2022, respectively, were collected
+       by the Plan and paid to AFS.
+
+       Prior to June 1, 2022, the interest rate for loans was the G Fund rate at the time the loan agreement was issued.
+       Beginning June 1, 2022, the interest rate for loans is the G Fund rate from the prior month from when the loan
+       was requested. The rate is fixed at this level for the life of each loan. Participant loans are valued at their
+
+5 Civilian and military service cannot be combined to meet the vesting requirements.
+
+                                                               8
+       unpaid balances. Interest earned on loans is allocated to the participant's account as loan payments are made
+       to that account.
+
+       By Internal Revenue Service (IRS) regulation, each calendar quarter the Agency must identify any participant
+       loan that is in default. The participant then has until the end of the following calendar quarter to pay the
+       overdue amount. If not paid, a taxable distribution of the unpaid loan balance, plus accrued interest, is
+       reported to the IRS and the loan is closed. Taxable loan distributions also occur when a participant separates
+       from service and does not repay the loan in full or make payments to pay an outstanding loan balance.
+       Participants should refer to the booklet, Loans, for more information.
+
+       Payment of Benefits-- After leaving service, participants may leave their money in the TSP. If they choose to
+       withdraw their money, their options are installment payments (monthly, quarterly, or annually), a partial
+       distribution of a specified amount, an annuity purchase, or a total withdrawal. The distribution can combine
+       options. Participants may choose to combine any two or all three of the available withdrawal options.
+       Participants should refer to the booklet, Distributions, for more complete information.
+
+       Participants should refer to the booklet, In-Service Withdrawals, for information on withdrawal options while
+       employed in Federal service.
+
+2. SUMMARY OF SIGNIFICANT ACCOUNTING POLICIES
+
+       Basis of Accounting-- The accompanying financial statements have been prepared in accordance with
+       accounting principles generally accepted in the United States of America. Revenue is recognized when earned
+       and expenses are recognized when incurred.
+
+       The Fund's expenses are paid by the Fund, as provided by the Plan document. Expenses incurred in
+       connection with the general administration of the Fund that are paid by the Fund are recorded as deductions in
+       the accompanying statements of the changes in net assets available for benefits. In addition, certain investment
+       related expenses are included in net appreciation (depreciation) of investments presented in the accompanying
+       statements of changes in net assets available for benefits.
+
+       In February 2016, the Financial Accounting Standards Board (FASB) approved Accounting Standards
+       Codification (ASC) 2016-02, Leases (Topic 842). The ASC is designed to increase transparency and
+       comparability among organizations by recognizing lease assets and liabilities on the statement of financial
+       condition and disclosing key information about leasing arrangements. The Fund does not have any material
+       leases in effect as of the date of adoption of ASC No. 842. As such, the adoption of ASC No. 842 does not
+       have an impact on the Fund's financial statements.
+
+       Notes Receivable from Participants--Notes receivable from participants are measured at their unpaid
+       principal balance plus any accrued but unpaid interest. Interest income is recorded on an accrual basis. Related
+       fees are recorded as administrative expenses and are expensed when they are incurred. No allowance for credit
+       losses have been recorded as of December 31, 2023, or 2022. Delinquent notes receivable are recorded as
+       distributions on the basis of the terms of the Plan document.
+
+       Benefit Payments--Benefits are recorded when withdrawn from participants' accounts.
+
+       Investments-- All investments are stated at fair value, based upon the quoted market values of the underlying
+       securities at the end of each period. The Agency invests in (or redeems from) the Thrift Savings Fund
+       investment funds each business day. Purchases and sales of securities are recorded on a trade-date basis.
+       Interest income is recorded on an accrual basis. Interest and dividends are recorded on the ex-dividend date.
+
+       The Plan offers its participants various investment funds that are exposed to different types and amounts of
+       risk, including interest rate, credit, and market risk. Except for the G Fund, which is invested in a way to
+       avoid losses, depending upon each fund's individual risk profile, the funds can be expected to experience
+       volatility over time, thus affecting the fund balances from one period to the next.
+
+                                                               9
+During the twelve-month periods ended December 31, 2023 and December 31, 2022, the Plan's investment
+funds consisted of the following (objectives of the investment funds are described in the various TSP Fund
+Information Sheets, available on www.tsp.gov):
+
+The G Fund invests in short-term nonmarketable U.S. Treasury securities specially issued to the Government
+Securities Investment Fund (GSIF). By law, investments in the GSIF earn interest at a rate that is equal to the
+weighted average yield on outstanding U.S. Treasury marketable securities with 4 or more years to maturity.
+The interest rate is set every month based on the data as of the last business day of the previous month. As of
+December 31, 2023, and December 30, 2022, the total investment in the GSIF was approximately $294.9 and
+$292.6 billion, respectively.
+
+The F Fund invests in separate accounts that are passively managed to track the Bloomberg U.S. Aggregate
+Bond Index. Both managers of the F Fund use sampling to replicate the characteristics of the index. As of
+December 31, 2023, and December 31, 2022, the separate accounts held approximately $33.1 and $30.2
+billion of securities, respectively.
+
+The C Fund invests in separate accounts that are passively managed to track the S&P 500 Index. Both
+managers of the C Fund hold stocks of all the companies represented in the S&P 500 Index in virtually the
+same weights as the index. As of December 31, 2023 and December 31, 2022, the separate accounts held
+approximately $339.0 and $262.9 billion of securities, respectively.
+
+The S Fund invests in separate accounts that are passively managed to track the Dow Jones U.S. Completion
+Total Stock Market Index. Both managers of the S Fund hold most of the stocks with larger capitalizations in
+virtually the same weights as the index, using sampling to hold a representative subset of the remaining stocks
+in the index. As of December 31, 2023, and December 31, 2022, the separate accounts held approximately
+$99.9 and $78.5 billion of securities, respectively.
+
+The I Fund invests in a separate account that is passively managed to track the MSCI EAFE Index. Both
+managers of the I Fund hold stocks of all companies in the MSCI EAFE Index in virtually the same weights as
+the index. As of December 31, 2023 and December 31, 2022, the separate accounts held approximately $78.2
+and $61.6 billion of securities, respectively. For the period ended December 31, 2021, BlackRock was the
+sole manager of the I Fund. SSGA began managing I Fund assets on December 12, 2022.
+
+The MFW is an investment option that offers approximately 5,000 mutual funds. As of December 31, 2023
+and December 31, 2022, the MFW held approximately $284.2 and $149.3 million of securities, respectively.
+
+Fair Market Valuations-- The Plan's agents, BlackRock and SSGA, follow the FASB's Accounting
+Standards Codification (ASC) 820-10, which provides a comprehensive framework for measuring fair value
+and expands disclosures which are required about fair value measurements. Specifically, FASB ASC 820-10
+sets forth a definition of fair value and establishes a hierarchy prioritizing the inputs to valuation techniques.
+
+Under FASB ASC 820-10, the fair value hierarchy prioritizes inputs to valuation techniques used to measure
+fair value into three broad levels: Level I, Level II, and Level III. Inputs may be based on independent market
+data ("observable inputs") or they may be internally developed ("unobservable inputs"). The hierarchy gives
+the highest priority to quoted prices in active markets for identical assets (Level I) and the lowest priority to
+unobservable inputs (Level III).
+
+An "independent market quotation" for a security or other asset is defined as a quoted price in an active
+market for an identical security or asset (a "Level I Price").
+
+As a general principle, the current "fair market value" of a security or other asset is the amount that a Fund
+might reasonably expect to: (i) receive upon the sale of the security or asset; or (ii) pay to transfer the liability
+associated with the security or asset in an orderly transaction between market participants on the date on which
+the security or asset is being valued. In the event that a Level I Price is not based on a quoted market price for
+a given type of security or asset, the fair value of the security or other asset is determined by using pricing
+inputs that are either directly or indirectly observable on the valuation date for the security or asset, which may
+include the use of models or other valuation methodologies (a "Level II Price").
+
+                                                        10
+For BlackRock, Level I Prices and Level II Prices are provided by broker dealers or by pricing providers,
+services, and vendors (together, "pricing sources") approved by the BlackRock Global Valuation Committee
+or its delegates. The pricing sources approved by the BlackRock Global Valuation Committee vary according
+to security or asset type and include, but are not limited to, Thomson Reuters, FTSE TMX (formerly PC-
+Bond/DEX), Bloomberg, ICE Data Services (formerly Interactive Data/Standard and Poor's Securities
+Evaluation Service) and IHS Markit.
+
+For SSGA, Level I Prices and Level II Prices are provided by broker dealers or by pricing providers, services,
+and vendors (together, "pricing sources") approved by the SSGA North America Valuation Committee or its
+delegates. The pricing sources approved by the SSGA North America Valuation Committee vary according to
+security or asset type and include, but are not limited to, Bloomberg, ICE Data Services (formerly Interactive
+Data/Standard and Poor's Securities Evaluation Service) IHS Markit, JP Morgan Pricing Direct and Refinitiv.
+
+The separate accounts have a readily determinable fair value as these securities transact on a daily basis
+without restrictions. The readily determinable fair value is used to determine net asset value per share. The net
+asset value is based upon the fair value of the underlying investments.
+
+Mutual funds are valued at the daily closing price as reported by the fund. Mutual funds held by the Plan are
+open-end mutual funds that are registered with the Securities and Exchange Commission. These funds are
+required to publish their daily net asset value and to transact at that price. The mutual funds held in the mutual
+fund window are deemed to be actively traded.
+
+The table at Appendix 1 sets forth by level, within the fair value hierarchy and at net asset value, the Plan's
+assets at fair value as of December 31, 2023 and December 31, 2022.
+
+The F, C, S, and I Funds include temporary investments in the same U.S. Treasury securities held by the G
+Fund pending daily purchase of shares in their respective index funds and to cover liquidity needs, such as
+loans and withdrawals from the Thrift Savings Fund.
+
+The separate accounts incurred investment fees payable for the separate account program management for the
+prior twelve months as follows: the F Fund ($0.2 million and $6.6 million as of December 31, 2023 and 2022,
+respectively), the C Fund ($0.5 million and $3.6 million as of December 31, 2023 and 2022 respectively), the
+S Fund ($26.4 million and $27.4 million and as of December 31, 2023 and 2022, respectively) and I Fund
+($4.1 million and $3.6 million as of December 31, 2023 and 2022, respectively). The separate accounts in
+which the C, S, and I Funds may invest in futures contracts and other derivatives to the extent contemplated by
+the fund guidelines. As part of the investment strategies, derivative instruments may be used to provide
+liquidity for daily investments or to manage currency, interest, and other exposures.
+
+The F, C, S, and I Funds also participate in securities lending activities, under agreements between the Plan's
+lending agents and their third parties to lend debt and equity securities in exchange for collateral. The
+collateral received, which is required to equal 102% of the value of the domestic securities lent and 105% of
+the value of international securities, is marked to market each day, and may be invested in cash collateral
+funds managed by BlackRock and SSGA, which in turn invest in money market securities and instruments. A
+portion of the cash collateral for securities lending by the F, C, S, and I Funds is invested in the G Fund when
+interest rates make such investment profitable for the F, C, S and I Funds. There was no cash collateral
+invested in the G Fund as of December 31, 2023 and 2022.
+
+A major source of risk in any securities lending program is that the securities and instruments in which the
+cash collateral received (against security loans) is invested may decline in value. BlackRock's and SSGA's
+responsibilities include performing appropriate borrower and collateral investment credit analysis, demanding
+adequate types and levels of collateral and complying with applicable Department of Labor and Federal
+Financial Institutions Examiner Council standards regarding securities lending.
+
+The tables at Appendix 2 show how the participants' account balances in the various investment options are
+allocated among the core TSP Funds and the MFW as of December 31, 2023 and December 31, 2022
+respectively.
+
+                                                        11
+Securities Lending Income-- Securities lending income represents the income earned from the investment of
+the cash collateral, net of rebates paid to, or fees paid by, borrowers and less the fees paid to the securities
+lending agent. During the term of the loan, the Fund earns dividend or interest income on the securities loaned
+but does not receive interest income on any securities received as collateral. Loans of securities are terminable
+at any time and the borrower, after notice, is required to return borrowed securities within the standard time
+period for settlement of securities transactions. In the event that the borrower defaults on its obligation to
+return borrowed securities because of insolvency or for any other reason, the Fund could experience delays
+and costs in gaining access to the collateral. The Fund also could suffer a loss if the value of an investment
+purchased with cash collateral falls below the market value of loaned securities or if the value of an
+investment purchased with cash collateral falls below the value of the original cash collateral received. There
+was no securities lending income earned on cash collateral during 2023.
+
+Fixed Assets--All fixed assets were recorded at cost and are depreciated on a straight-line basis over their
+estimated useful lives, which range as follows:
+
+· Furniture and Equipment   3 to 7 years
+· Leasehold Improvements    15 years
+· Data Processing Software  3 years
+
+During the twelve-month period ended December 31, 2023, and 2022, depreciation and amortization expense
+was approximately $0.5 million and $1.4 million, respectively.
+
+Earnings Allocation-- Net earnings are used to calculate the daily share price of each investment fund as
+defined in regulations issued by the Agency (5 C.F.R. Part 1645).
+
+Contributions Receivable-- Contributions receivable are estimated as the amount of contributions recorded
+through the first 2 weeks of the month following the date of the financial statements and represent both
+participant and employer portions of contributions.
+
+Estimates-- The preparation of financial statements in conformity with accounting principles generally
+accepted in the United States of America requires management to make estimates and assumptions that affect
+the reported amounts of net assets available for benefits and changes therein. Actual results could differ from
+those estimates.
+
+Thrift Savings Plan Enhancement Act of 2009--On June 22, 2009, the Thrift Savings Plan Enhancement Act
+(the Act or P.L. 111-31) was signed into law. The Act provides for immediate agency automatic (1%) and
+matching contributions for FERS employees (implemented in August 2009). The Act also requires civilian
+Federal agencies to automatically enroll newly hired (and rehired) eligible employees unless the employee
+makes an affirmative election not to participate in the Fund or elect a deferral rate other than the deferral rate
+of 3 percent (implemented in August 2010). The default deferral rate was changed to 5 percent in October
+2020. The Act also allows the Agency to establish accounts for the surviving spouses of TSP participants
+(implemented December 2010). In addition, the Act also gives the Federal Retirement Thrift Investment
+Board the authority to establish a qualified Roth contribution program (implemented in May 2012) and the
+authority to establish a mutual fund window. The mutual fund window was implemented on June 1, 2022.
+
+3. INCOME TAX STATUS
+
+FERSA (5 U.S.C. § 8440(a)(1)) states that the Thrift Savings Fund shall be treated as a trust described in
+section 401(a) of the Internal Revenue Code (IRC or Code), which is exempt from taxation under section
+501(a) of the Code. This status was reaffirmed in the Tax Reform Act of 1986, Section 1147 (codified at
+I.R.C. § 7701(j)). It is not necessary for the Plan to apply for a tax status determination letter as it is qualified
+by statute.
+
+                            12
+4. COMMITMENTS AND CONTINGENCIES
+
+      The Agency has contracted with AFS to provide TSP recordkeeping services and defined contribution
+      managed services that will operate and manage the associated people, processes, and systems to deliver TSP
+      retirement services. AFS's recordkeeping services contract (named "Converge") replaces the legacy contracts
+      for operations support, contact center, print/mail, and IT recordkeeping services. The transition of the legacy
+      services to Converge was successfully completed in June 2022. During the twelve-month period ended
+      December 31, 2023, and 2022, the total cost of the Converge contract for recordkeeping systems and
+      operations support was approximately $272.9 million and $245.2 million, respectively.
+
+       As a part of the legacy recordkeeping support services, the Agency has contracted with Science Applications
+       International Corporation (SAIC) to provide a broad range of IT and IT-related recordkeeping support
+       services, including program management and cross functional services, infrastructure, and operations (data
+       center, data network, service desk, voice network, end user services), application services, and
+       recordkeeping. The cost of the SAIC contract was approximately $14.8 million and $113.0 million, as of
+       December 31, 2023, and 2022, respectively.
+
+       As a part of the legacy recordkeeping support services, the Agency contracted with Serco to provide
+       operations support and a contact center in Alabama and Virginia, as well as with RA Outdoors, LLC to
+       provide a contact center in Maryland and Texas. The cost of the Serco contact center contract was
+       approximately $26.2 million as of December 31, 2022. The cost of the RA Outdoors, LLC contact center
+       contract was approximately $13.6 million as of December 31, 2022. The Agency no longer contracts with
+       Serco or RA Outdoors, LLC.
+
+5. FIDUCIARY INSURANCE
+
+      FERSA (5 U.S.C. § 8479(b)(1)) provides that the Executive Director may assess Federal agencies for the
+      purpose of buying fiduciary insurance. The Agency's Executive Director exercised this authority in 1987 and
+      required agencies to submit an amount equal to 1 percent of their agency automatic contributions. Such sums
+      were collected during 1987 and 1988 and are invested to the extent not currently required to purchase fiduciary
+      insurance. In February 1988, the Executive Director instructed agencies to discontinue the 1 percent fiduciary
+      insurance contributions. The balance of funds available for the purchase of fiduciary insurance as of
+      December 31, 2023, and 2022 was $3,081,888 and $3,140,934, respectively. These funds are invested in the
+      same securities held by the G Fund and are included in total investments on the accompanying statements of
+      net assets available for benefits, with a corresponding reduction in the net assets available for benefits. By
+      statute, such amounts cannot be allocated to participants' accounts. The Agency has determined that the
+      current insurance reserve is adequate to fund coverage needs for the foreseeable future.
+
+6. SUBSEQUENT EVENTS
+
+      The Fund is subject to various claims and legal proceedings covering matters that arise in the ordinary course
+      of its administrative activities. Management believes that the final resolution of these matters will not have a
+      materially adverse effect on the net assets available for benefits or changes in net assets available for benefits
+      of the Fund.
+
+      Agency management evaluated subsequent events through June 12, 2024, the date the financial statements
+      were available to be issued. Events or transactions occurring after December 31, 2023, but prior to June 12,
+      2024, that provided additional evidence about conditions that existed at December 31, 2023, have been
+      recognized in the financial statements for the twelve-month period ending December 31, 2023. Events or
+      transactions that provided evidence about conditions that did not exist on December 31, 2023, but arose before
+      the financial statements were available to be issued, have not been recognized in the financial statements for
+      the twelve-month period ended December 31, 2023
+
+                                                           ******
+
+                                                              13
+                            Appendix 1
+
+                            Fair Value Measurements as of December 31, 2023
+                                                     (in thousands)
+
+                             Quoted Prices in   Significant Other    Significant
+                            Active Markets for  Observable Inputs  Unobservable
+
+                              Identical Assets                         Inputs
+
+           Description         (Level 1)          (Level 2)          (Level 3)         Total
+                            $294,938,231        $-                 $-             $294,938,231
+U.S. Government Securities
+Investment Account                 -               33,133,377            -           33,133,377
+TSP F Fund ­ U.S. Debt             -             338,996,638             -         338,996,638
+Index Account                      -                                     -
+TSP C Fund - Equity Index          -               99,906,883            -           99,906,883
+Account                                            78,154,366                        78,154,366
+TSP S Fund- Extended
+Equity Index Account                                                                     284,152
+TSP I Fund- EAFE Equity                                                           $845,413,647
+Index Account
+                                                                                       Total
+Mutual Fund Window          284,152                 -              -              $292,599,140
+
+Total assets at fair value  $295,222,383 $550,191,264 $ -                            30,209,671
+                                                                                   262,870,880
+                            Fair Value Measurements as of December 31, 2022
+                                                     (in thousands)                  78,468,123
+                                                                                     61,564,379
+                             Quoted Prices in   Significant Other    Significant
+                            Active Markets for  Observable Inputs  Unobservable          149,346
+                                                                                  $725,861,539
+                              Identical Assets                         Inputs
+
+           Description         (Level 1)          (Level 2)          (Level 3)
+                            $292,599,140        $-                 $-
+U.S. Government Securities
+Investment Account                 -               30,209,671            -
+TSP F Fund ­ U.S. Debt             -             262,870,880             -
+Index Account                      -                                     -
+TSP C Fund - Equity Index          -               78,468,123            -
+Account                                            61,564,379
+TSP S Fund- Extended
+Equity Index Account
+TSP I Fund- EAFE Equity
+Index Account
+
+Mutual Fund Window          149,346                 -              -
+
+Total assets at fair value  $292,748,486 $433,113,053 $ -
+
+                                                14
+                                                 Appendix 2
+
+                               Investment Summary by Fund as of December 31, 2023
+                                                           (in thousands)
+
+Investment       G Fund          F Fund             C Fund          S Fund        I Fund           Mutual Fund
+                               Investment        Investment       Investment
+Opti ons         Investment                                                       Investment Window (MFW)                Total
+                                         -                 -                -                                        $234,006,302
+G Fund           $234,006,302  $20,410,133                 -                -     -                -
+                                                 $270,871,401               -                                           20,410,133
+F Fund           -                       -                        $82,439,523     -                -                  270,871,401
+                                         -                 -
+C Fund           -                       -                 -                -     -                -                    82,439,523
+                                   1,513,096          3,596,305         872,573                                         31,984,148
+S Fund           -                    631,099         1,877,955         466,216   -                -                    27,079,889
+                                   3,172,733        16,674,938        4,196,731                                         10,697,861
+I Fund           -                    537,352         2,690,586         684,415   $31,984,148      -                    53,555,184
+                                   3,555,109        18,404,442        4,730,725
+L Income         18,677,520           389,901         2,031,960         531,298   2,420,395        -                      7,894,889
+                                   2,866,117        16,288,372        4,298,368                                         49,734,813
+L 2025           6,453,323             20,914         2,304,590         610,413   1,269,268        -
+                                       17,637         1,686,783         446,774                                           5,150,591
+L 2030           18,219,508            27,476         2,283,095         604,710   11,291,274       -                    38,830,766
+                                         -                 -
+L 2035           2,156,250             (8,190)          286,211             -     1,826,286        -                      4,537,551
+                                                                          25,137                                          3,321,137
+L 2040           10,525,095                                                       12,519,442       -                      4,495,219
+
+L 2045           810,286                                                          1,387,146        -                        284,152
+                                                                                                                            120,088
+L 2050           4,236,804                                                        11,141,105       -
+                                                                                                                     $845,413,647
+L 2055           24,129                                                           1,577,505        -
+
+L 2060           15,329                                                           1,154,614        -
+
+L 2065           17,139                                                           1,562,799        -
+
+MFW              -                                                                -                284,152
+
+Differences (*) (203,454)                                                         20,384           -
+
+Statement of     $294,938,231  $33,133,377 $338,996,638 $99,906,883 $78,154,366                    $284,152
+Net Assets
+
+(*) Differences are a result of timing differences, including investment transactions not settled as of December 31, 2023. These differences may
+not be allocated down to the L Funds until the following business day.
+
+                               Investment Summary by Fund as of December 31, 2022
+                                                            (in thousands)
+
+Investment       G Fund           F Fund            C Fund           S Fund          I Fund          Mutual Fund
+                               Investment        Investment       Investment      Investment       Window (MFW)
+Opti ons         Investment                                                                                               Total
+                                          -                 -               -               -                   -    $240,410,499
+G Fund           $240,410,499  $19,477,287                  -               -               -                   -
+                                                 $209,990,529               -               -                   -       19,477,287
+F Fund           -                        -                       $64,422,654               -                   -     209,990,529
+                                          -                 -                     $25,746,933                   -
+C Fund           -                        -                 -               -         2,259,611                 -       64,422,654
+                                   1,494,463          3,387,758         822,860       1,255,637                 -       25,746,933
+S Fund           -                    568,795         1,871,986         470,562       9,600,433                 -       26,484,732
+                                   2,840,985        14,250,564        3,658,235       1,128,475                 -
+I Fund           -                    345,115         1,668,411         436,203     10,139,353                  -         9,377,700
+                                   2,963,551        14,938,480        3,975,637         797,995                 -       45,820,234
+L Income         18,520,040           231,744         1,168,608         319,964       8,426,218                 -
+                                   2,247,169        12,300,557        3,417,494         777,940                 -         4,908,470
+L 2025           5,210,720              10,805        1,134,261         316,901         569,832                 -       40,527,011
+                                          8,903          830,832        232,126         852,439                 -
+L 2030           15,470,017             15,290        1,242,588         347,167             -               149,346       2,981,092
+                                          -                 -                               9,513               -       29,546,784
+L 2035           1,330,266                5,564           86,306            -
+                                                                          48,320                                          2,251,436
+L 2040           8,509,990                                                                                                1,649,144
+                                                                                                                          2,466,647
+L 2045           462,781
+                                                                                                                             149,346
+L 2050           3,155,346                                                                                                (348,959)
+
+L 2055           11,529                                                                                              $725,861,539
+
+L 2060           7,451
+
+L 2065           9,163
+
+MFW              -
+
+Differences (*)  (498,662)
+
+Statement of     $292,599,140  $30,209,671 $262,870,880 $78,468,123 $61,564,379                    $149,346
+Net Assets
+
+(*) Differences are a result of timing differences, including investment transactions not settled as of December 31, 2022. These differences may
+not be allocated down to the L Funds until the following business day.
+
+This information is an integral part of the accompanying financial statements.
+
+                                                 15
+

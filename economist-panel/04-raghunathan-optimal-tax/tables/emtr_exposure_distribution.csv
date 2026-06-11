@@ -1,0 +1,6 @@
+"group","workers_m","earnings_b","mean_emtr_pp","max_emtr_pp","share_of_eligible","level"
+"Cap binds: zero implicit EMTR",5.789,273.746,0,0,0.126,"All eligible"
+"Cap not binding: positive implicit EMTR",40.277,1233.094,3.251,33.928,0.874,"All eligible"
+"hoh",6.873,246.54,3.273,NA,0.929,"By filing group (positive-EMTR exposed)"
+"mfj",11.318,388.548,2.349,NA,0.743,"By filing group (positive-EMTR exposed)"
+"single_mfs",22.086,598.006,3.706,NA,0.942,"By filing group (positive-EMTR exposed)"

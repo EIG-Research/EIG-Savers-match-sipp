@@ -1,0 +1,4 @@
+"scenario","p_w2","p_se","cost_B","participants_M"
+"Repo headline (uniform p = 0.598 on margin)",0.598,0.598,14.946,27.545
+"Literature-consistent optimistic (W-2 86%, self-employed 14%)",0.86,0.14,18.194,33.136
+"Literature-consistent pessimistic (W-2 34.3%, self-employed 5.7%)",0.343,0.057,10.271,18.969

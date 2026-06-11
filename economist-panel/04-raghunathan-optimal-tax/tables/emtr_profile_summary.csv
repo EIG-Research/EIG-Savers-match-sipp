@@ -1,0 +1,4 @@
+"filing_group_chr","pivot_magi","endpoint_magi","rate_slope_pp_per_1000","cap_binds_anywhere","cap_region_lo","cap_region_hi","emtr_at_pivot_pp","peak_emtr_pp","peak_emtr_magi","cl_emtr_2000_pp","cl_band_lo","cl_band_hi"
+"hoh",49318.78,65758.38,3.04,FALSE,NA,NA,4.49,6,65750,4.44,30750,53250
+"mfj",65758.38,87677.84,2.28,TRUE,22500,65250,4.5,5.99,87500,3.33,41000,71000
+"single_mfs",32879.19,43838.92,4.56,FALSE,NA,NA,4.52,5.99,43750,6.67,20500,35500

@@ -1,0 +1,7 @@
+"label","e1","e2","joint_magi","hyb_married_rate_pct","hyb_married","hyb_singles","hyb_marriage_delta","cl_married","cl_singles","cl_marriage_delta"
+"Equal earners, $20k + $20k",20000,20000,40000,109,1305,1305,0,600,600,0
+"Equal earners, $35k + $35k",35000,35000,70000,40,847,847,0,35,35,0
+"Unequal earners, $30k + $10k",30000,10000,40000,109,1305,1031,274,600,315,285
+"Unequal earners, $34k + $10k",34000,10000,44000,100,1299,921,378,594,201,393
+"Single earner, $40k + $0",40000,0,40000,109,1000,210,790,600,0,600
+"Single earner, $60k + $0",60000,0,60000,63,1000,0,1000,330,0,330

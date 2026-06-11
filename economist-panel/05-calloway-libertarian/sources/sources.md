@@ -1,0 +1,21 @@
+# Source Manifest — economist-panel/05-calloway-libertarian/sources/
+
+All files downloaded **2026-06-10**. Sources already present in `economist-panel/_shared/sources/` (the executive order, the White House fact sheet, S.1526 bill text, CRS IF11159, IRS Notice 2024-65, the AEI/Warshawsky commentary, the Morningstar RSAA analysis, the RAND RSAA report, ASPPA/IRSAC coverage) are cited in the assessment but not re-downloaded here.
+
+| File | Title | Author / Institution | Year | URL | Accessed | Relevance |
+|---|---|---|---|---|---|---|
+| `tsp-fs-dec2023.pdf` | "Thrift Savings Fund Financial Statements and Independent Auditors' Report, December 31, 2023 and 2022" | Federal Retirement Thrift Investment Board (FRTIB) | 2024 | https://www.frtib.gov/pdf/reading-room/FinStmts/TSP-FS-Dec2023.pdf | 2026-06-10 | Audited TSP contribution flows used as the scale benchmark: CY2023 participant contributions $31.150B, employer $13.564B, total $44.714B; ~7.0M participants; $856.9B net assets. (`tsp-fs23.txt` is the pdftotext extraction used for verification.) |
+| `beshears-etal-2015-liquidity-nber-w21168.pdf` | "Liquidity in Retirement Savings Systems: An International Comparison" | John Beshears, James J. Choi, Joshua Hurwitz, David Laibson, Brigitte C. Madrian (NBER WP 21168; AER P&P 105(5)) | 2015 | https://www.nber.org/papers/w21168 | 2026-06-10 | Leakage benchmark: for every $1 contributed to DC accounts of savers under 55, $0.40 simultaneously flows out; the U.S. is uniquely liquid among six countries studied. |
+| `argento-bryant-sabelhaus-2013-early-withdrawals.pdf` | "Early Withdrawals from Retirement Accounts During the Great Recession" | Robert Argento, Victoria L. Bryant, John Sabelhaus (FEDS 2013-22) | 2013 | https://www.federalreserve.gov/pubs/feds/2013/201322/201322pap.pdf | 2026-06-10 | Tax-data evidence that early-withdrawal shocks concentrate among lower-income taxpayers; in 2010, 45 cents flowed out as taxable distributions per $1 contributed by the under-55 group. |
+| `choukhmane-2021-default-options.pdf` | "Default Options and Retirement Saving Dynamics" | Taha Choukhmane (MIT Sloan; published AER 2025) | 2021 | https://tahachoukhmane.com/wp-content/uploads/2021/06/Choukhmane-2021-Default-options.pdf | 2026-06-10 | Structural evidence that auto-enrollment's long-term wealth effect is negligible except at the bottom of the earnings distribution; workers offset defaults by saving less later. |
+| `fedweek-tsp-china-esg-dei-congress.html` | "China, ESG, DEI: Congress Eyeing TSP Investment Choices" | FedWeek | 2024 (May 29) | https://www.fedweek.com/retirement-financial-planning/china-esg-dei-congress-eyeing-tsp-investment-choices/ | 2026-06-10 | Documents the live two-party politicization of the TSP investment menu (China divestment bills, ESG fund proposals) — the governance precedent for any new federal account. |
+| `calsavers-ftb-penalty-collections.html` | "CalSavers" (penalty collections page) | California Franchise Tax Board | 2026 (current page) | https://www.ftb.ca.gov/pay/collections/calsavers/index.html | 2026-06-10 | Documents state auto-IRA enforcement against employers: $250-per-employee first-notice penalty, additional $500 per employee at final notice, annually until compliance — the coercion footprint of "automatic" enrollment mandates. |
+
+## Not downloadable / cited from shared sources
+
+| Item | URL | Status |
+|---|---|---|
+| Warshawsky (AEI), "TrumpIRA.gov" | https://www.aei.org/economics/trumpira-gov/ | Already in `_shared/sources/aei-trumpira-gov-commentary-2026.html`; cited, not re-downloaded. |
+| Look & VanDerhei (Morningstar), "Will the Retirement Savings for Americans Act Save Retirement?" | https://www.morningstar.com/retirement/will-retirement-savings-americans-act-save-retirement | Already in `_shared/sources/`; cited, not re-downloaded. |
+| RAND, "Impacts of the Retirement Savings for Americans Act" (RRA2614-3) | https://www.rand.org/pubs/research_reports/RRA2614-3.html | Already in `_shared/sources/`; cited, not re-downloaded. |
+| FRTIB, "Thrift Savings Fund Financial Statements, December 31, 2024" | https://www.frtib.gov/pdf/reading-room/FinStmts/TSP-FS-Dec2024.pdf | Downloaded but image-scanned (no extractable text); deleted in favor of the text-searchable December 2023 statements. CY2023 figures used instead. |
