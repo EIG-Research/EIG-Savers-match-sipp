@@ -101,3 +101,21 @@ adapter dirs (`.claude`/`.codex`/`.agents`), and `migration-prompt-savers-match-
 - `literature/README.md:73` cites the reproducibility package as `bnglasner/RSAA-cost-simulation-static`.
   Update to the EIG repo or keep as historical? (Not rewritten.)
 - `PROJECT.md` / `README.md` cost-scope additions drafted separately for review (D7); not yet committed.
+
+## Post-port reconciliation — 2026-07-10
+- **SOURCE divergence found and resolved.** After the 2026-06-08 port (SOURCE head `c1b5dfc`),
+  `RSAA-cost-simulation-static` received one substantive SM commit — `303d6ab` "simple savers
+  updates" (2026-06-16) — adding a targeted "$33,350 saver at 3 percent" three-way comparison
+  (no match / dollar-for-dollar $1,000-capped match / current-law Saver's Match) to
+  `code/03_main_estimation/03h_simple_saver_illustration.R`, plus a new
+  `simple_saver_illustration_33350_3pct_match_comparison.xlsx` export.
+- **Back-ported** into TARGET's canonical `code/03_cost_simulation/03c_simple_saver_illustration.R`:
+  the `DOLLAR_MATCH_CAP` constant, its `stopifnot` guard, the comparison computation/reconciliation
+  block, and the two-sheet xlsx export. TARGET's canonical header/title and the SOURCE's
+  "Retirement Questions for Catherine" title were NOT carried over (kept TARGET). Two in-code
+  "03h" references in the ported block were adapted to "03c". Verified: R 4.4.3 parse OK.
+  Full run deferred (Tier 3; regenerates canonical outputs) — the new comparison xlsx is produced
+  on the next deliberate `03c` run.
+- **SOURCE cleanup (deferred item from the port log) still pending.** With this feature now in
+  TARGET, `RSAA-cost-simulation-static` no longer holds any SM work absent from the canonical repo.
+  Recommended next step: delete the ported SM material from SOURCE, leaving it RSAA-only.

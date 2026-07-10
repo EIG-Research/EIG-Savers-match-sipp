@@ -218,6 +218,11 @@ DT_RANGE_MULTIPLIER       <- 2.0
 # Contribution timing -----------------------------------------------
 CONTRIBUTION_TIMING <- "end_of_year"
 
+# Targeted comparison-only government match -------------------------
+# Separate from current-law Saver's Match. Used only for the
+# standalone $33,350 @ 3 percent comparison export below.
+DOLLAR_MATCH_CAP <- 1000L
+
 # Output toggles ----------------------------------------------------
 # WRITE_FIGURE is FALSE for the 2026-05-11 four-multiplier extension
 # round: ten scenarios on a single panel would be unreadable. A faceted
@@ -323,6 +328,7 @@ stopifnot(
   SM_CONTRIB_CAP > 0,
   SM_MATCH_RATE > 0, SM_MATCH_RATE <= 1,
   SM_SINGLE_FACTOR > 0, SM_SINGLE_FACTOR <= 1,
+  DOLLAR_MATCH_CAP >= 0,
   DT_AMOUNT_MULTIPLIER >= 1, DT_RANGE_MULTIPLIER >= 1,
   is.numeric(SM_MULTIPLIERS_NUM),
   length(SM_MULTIPLIERS_NUM) >= 1L,
@@ -729,6 +735,168 @@ message(sprintf(
 message("===================================================================")
 
 ###################################################################
+###      Targeted comparison: $33,350 saver at 3 percent       ###
+###################################################################
+
+# 8) Separate wide-format export for a single worker earning
+#    $33,350 in year 1 and contributing 3 percent. Three designs are
+#    shown: no government match, a government dollar-for-dollar match
+#    capped at a fixed nominal $1,000, and the current-law Saver's
+#    Match. This export is intentionally separate from the main 03c
+#    workbook so downstream memo work can lift a four-column
+#    age-by-balance table directly.
+comparison_scenarios_tbl <- tibble(
+  comparison_id_chr = c(
+    "worker_33350_3pct_no_match",
+    "worker_33350_3pct_dollar_match",
+    "worker_33350_3pct_savers_match"
+  ),
+  comparison_column_chr = c(
+    "Savings without any match",
+    "Savings with the dollar for dollar match",
+    "Savings with the savers match"
+  ),
+  start_earnings_num = c(33350, 33350, 33350),
+  savings_rate_num = c(0.03, 0.03, 0.03),
+  apply_dollar_match_flag = c(FALSE, TRUE, FALSE),
+  apply_savers_match_flag = c(FALSE, FALSE, TRUE),
+  mfj_amount_2027_num = c(NA_real_, NA_real_, SM_MFJ_AMOUNT_2027),
+  mfj_range_2027_num = c(NA_real_, NA_real_, SM_MFJ_RANGE_2027)
+)
+
+comparison_results_list <- vector("list", length = nrow(comparison_scenarios_tbl))
+
+for (i in seq_len(nrow(comparison_scenarios_tbl))) {
+  sc <- comparison_scenarios_tbl[i, ]
+
+  start_earnings_num <- sc$start_earnings_num
+  savings_rate_num <- sc$savings_rate_num
+  apply_dollar_match_flag <- sc$apply_dollar_match_flag
+  apply_savers_match_flag <- sc$apply_savers_match_flag
+  mfj_amount_2027_used_num <- if (is.na(sc$mfj_amount_2027_num)) SM_MFJ_AMOUNT_2027 else sc$mfj_amount_2027_num
+  mfj_range_2027_used_num <- if (is.na(sc$mfj_range_2027_num)) SM_MFJ_RANGE_2027 else sc$mfj_range_2027_num
+
+  one_path <- tibble(
+    comparison_id_chr = sc$comparison_id_chr,
+    comparison_column_chr = sc$comparison_column_chr,
+    year_idx = seq_len(YEARS_OF_SAVING),
+    contribution_age_int = START_AGE + (year_idx - 1L),
+    balance_age_int = START_AGE + year_idx,
+    calendar_year = base_year + (year_idx - 1L)
+  ) |>
+    mutate(
+      earnings_nominal_num = start_earnings_num * (1 + WAGE_GROWTH)^(year_idx - 1L),
+      own_contribution_nominal_num = earnings_nominal_num * savings_rate_num,
+      sm_threshold_index_num = (1 + SM_THRESHOLD_INFLATION)^(year_idx - 1L),
+      mfj_amount_unrounded_num = mfj_amount_2027_used_num * sm_threshold_index_num,
+      mfj_increase_unrounded_num = mfj_amount_unrounded_num - mfj_amount_2027_used_num,
+      mfj_increase_rounded_num = if (SM_THRESHOLD_ROUND_BASE > 0) {
+        round(mfj_increase_unrounded_num / SM_THRESHOLD_ROUND_BASE) * SM_THRESHOLD_ROUND_BASE
+      } else {
+        mfj_increase_unrounded_num
+      },
+      mfj_amount_indexed_num = mfj_amount_2027_used_num + mfj_increase_rounded_num,
+      sm_lower_num = mfj_amount_indexed_num * SM_SINGLE_FACTOR,
+      sm_upper_num = sm_lower_num + (mfj_range_2027_used_num * SM_SINGLE_FACTOR),
+      sm_contrib_cap_num = SM_CONTRIB_CAP,
+      phaseout_factor_num = pmax(0, pmin(1,
+        (sm_upper_num - earnings_nominal_num) / (sm_upper_num - sm_lower_num)
+      )),
+      dollar_match_nominal_num = pmin(
+        own_contribution_nominal_num,
+        DOLLAR_MATCH_CAP
+      ) * as.numeric(apply_dollar_match_flag),
+      savers_match_nominal_num = SM_MATCH_RATE *
+        pmin(own_contribution_nominal_num, sm_contrib_cap_num) *
+        phaseout_factor_num *
+        as.numeric(apply_savers_match_flag),
+      government_match_nominal_num = dollar_match_nominal_num + savers_match_nominal_num,
+      total_contribution_nominal_num = own_contribution_nominal_num + government_match_nominal_num
+    )
+
+  balance_eoy_nominal_num <- numeric(YEARS_OF_SAVING)
+  prior_balance_num <- 0
+
+  for (t in seq_len(YEARS_OF_SAVING)) {
+    balance_eoy_nominal_num[t] <- prior_balance_num * (1 + ANNUAL_RETURN) +
+      one_path$total_contribution_nominal_num[t]
+    prior_balance_num <- balance_eoy_nominal_num[t]
+  }
+
+  one_path$balance_eoy_nominal_num <- balance_eoy_nominal_num
+  comparison_results_list[[i]] <- one_path
+}
+
+comparison_results_tbl <- bind_rows(comparison_results_list)
+
+dollar_match_cap_check_tbl <- comparison_results_tbl |>
+  filter(comparison_id_chr == "worker_33350_3pct_dollar_match") |>
+  mutate(cap_breach_flag = dollar_match_nominal_num > DOLLAR_MATCH_CAP + 1e-6) |>
+  filter(cap_breach_flag)
+
+if (nrow(dollar_match_cap_check_tbl) > 0L) {
+  stop("Dollar-for-dollar comparison match exceeds the fixed $1,000 cap.", call. = FALSE)
+}
+
+comparison_summary_tbl <- comparison_results_tbl |>
+  group_by(comparison_id_chr, comparison_column_chr) |>
+  summarise(
+    total_own_contribution_nominal_num = sum(own_contribution_nominal_num),
+    total_government_match_nominal_num = sum(government_match_nominal_num),
+    final_balance_nominal_num = balance_eoy_nominal_num[year_idx == YEARS_OF_SAVING],
+    .groups = "drop"
+  ) |>
+  arrange(match(comparison_id_chr, comparison_scenarios_tbl$comparison_id_chr))
+
+comparison_wide_tbl <- comparison_results_tbl |>
+  select(Age = balance_age_int, comparison_column_chr, balance_eoy_nominal_num) |>
+  tidyr::pivot_wider(
+    names_from = comparison_column_chr,
+    values_from = balance_eoy_nominal_num
+  ) |>
+  arrange(Age)
+
+if (!identical(comparison_wide_tbl$Age, seq.int(START_AGE + 1L, END_AGE))) {
+  stop("Comparison export age axis is not the expected end-of-year range.", call. = FALSE)
+}
+
+comparison_final_wide_tbl <- comparison_wide_tbl |>
+  filter(Age == max(Age)) |>
+  tidyr::pivot_longer(
+    cols = -Age,
+    names_to = "comparison_column_chr",
+    values_to = "wide_final_balance_nominal_num"
+  )
+
+comparison_final_check_tbl <- comparison_summary_tbl |>
+  select(comparison_column_chr, final_balance_nominal_num) |>
+  left_join(comparison_final_wide_tbl, by = "comparison_column_chr") |>
+  mutate(abs_diff_num = abs(final_balance_nominal_num - wide_final_balance_nominal_num))
+
+if (any(comparison_final_check_tbl$abs_diff_num > 1e-6)) {
+  stop("Wide-format $33,350 comparison export failed final-balance reconciliation.", call. = FALSE)
+}
+
+message("")
+message("===================================================================")
+message("Targeted comparison: $33,350 worker at 3 percent")
+for (i in seq_len(nrow(comparison_summary_tbl))) {
+  r <- comparison_summary_tbl[i, ]
+  message(sprintf(
+    "  %s -- own contributions %s | government match %s | final balance %s",
+    r$comparison_column_chr,
+    dollar(r$total_own_contribution_nominal_num, accuracy = 1),
+    dollar(r$total_government_match_nominal_num, accuracy = 1),
+    dollar(r$final_balance_nominal_num, accuracy = 1)
+  ))
+}
+message(sprintf(
+  "  Dollar-for-dollar government match assumption: fixed nominal cap of %s per year (not inflation indexed).",
+  dollar(DOLLAR_MATCH_CAP, accuracy = 1)
+))
+message("===================================================================")
+
+###################################################################
 ###                Save artifacts                               ###
 ###################################################################
 
@@ -961,6 +1129,61 @@ if (isTRUE(WRITE_XLSX)) {
 
   openxlsx::saveWorkbook(wb, out_xlsx, overwrite = TRUE)
   message("Saved xlsx: ", out_xlsx)
+
+  comparison_out_xlsx <- file.path(
+    path_output_tbl,
+    "simple_saver_illustration_33350_3pct_match_comparison.xlsx"
+  )
+  comparison_methodology_tbl <- tibble(
+    note_chr = c(
+      "Balances are nominal end-of-year account balances.",
+      "Worker profile: single filer earning $33,350 in year 1 and contributing 3 percent of earnings.",
+      "Contribution years run from ages 19 to 58; the Age column reports end-of-year attained age, so the data sheet runs from age 20 to age 59.",
+      "Dollar-for-dollar government match scenario: government matches own contributions dollar for dollar up to a fixed nominal $1,000 per year. The cap does not increase with inflation.",
+      "Saver's Match scenario: current-law Saver's Match parameters from the 03c script, including the fixed $2,000 contribution cap and statutory threshold indexing."
+    )
+  )
+  comparison_wb <- openxlsx::createWorkbook()
+  openxlsx::addWorksheet(comparison_wb, "Savings comparison")
+  openxlsx::writeDataTable(
+    comparison_wb,
+    "Savings comparison",
+    comparison_wide_tbl,
+    startRow = 1,
+    startCol = 1,
+    tableStyle = "TableStyleLight1"
+  )
+  openxlsx::addStyle(
+    comparison_wb,
+    "Savings comparison",
+    money_style,
+    rows = 2:(nrow(comparison_wide_tbl) + 1L),
+    cols = 2:ncol(comparison_wide_tbl),
+    gridExpand = TRUE
+  )
+  openxlsx::setColWidths(
+    comparison_wb,
+    "Savings comparison",
+    cols = seq_along(comparison_wide_tbl),
+    widths = "auto"
+  )
+  openxlsx::addWorksheet(comparison_wb, "Methodology notes")
+  openxlsx::writeDataTable(
+    comparison_wb,
+    "Methodology notes",
+    comparison_methodology_tbl,
+    startRow = 1,
+    startCol = 1,
+    tableStyle = "TableStyleLight1"
+  )
+  openxlsx::setColWidths(
+    comparison_wb,
+    "Methodology notes",
+    cols = 1,
+    widths = 120
+  )
+  openxlsx::saveWorkbook(comparison_wb, comparison_out_xlsx, overwrite = TRUE)
+  message("Saved xlsx: ", comparison_out_xlsx)
 }
 
 if (isTRUE(WRITE_FIGURE)) {
