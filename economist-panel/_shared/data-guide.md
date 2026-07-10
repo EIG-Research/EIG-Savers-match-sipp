@@ -41,16 +41,16 @@ All dollar values are SIPP 2024 incomes projected once to TY2027 (×1.093) and c
 | `match_rate_pp_num`, `match_rate_frac_num` | Hybrid match rate (percentage points / fraction) |
 | `default_contrib_num` | 3 percent default contribution (dollars) |
 | `match_per_worker_num` | Federal match at full participation, `min(rate × contrib, $1,000)` |
-| `eligible_flag` | In the hybrid eligibility band (46.07M weighted) |
+| `eligible_flag` | In the hybrid eligibility band (44.47M weighted) |
 
 ### `data/processed/universal_sm_hybrid/universe_dec.parquet`
 Same universe rows without simulation columns (pre-simulation frame).
 
 ### `data/processed/universal_sm_hybrid/scenario_results.parquet` (5 rows)
-Scenario ladder: eligible (M), participants (M), take-up, average match, annual cost ($M). Headline = SIPP-observed conditional participation (59.8 percent, $14.9B); 80 percent auto-enrollment ($19.9B); 100 percent ($24.9B).
+Scenario ladder: eligible (M), participants (M), take-up, average match, annual cost ($M). Headline = SIPP-observed conditional participation (59.0 percent, $14.15B); 80 percent auto-enrollment ($19.09B); 100 percent ($23.87B).
 
 ### `data/processed/universal_sm_hybrid/pivot_table.parquet` (3 rows)
-Per filing group: pivot MAGI, endpoint, slope (pp per dollar), weighted median MAGI. Pivots: Single $32,879 / MFJ $65,758 / HoH $49,319; endpoints at 4/3 of pivot.
+Per filing group: pivot MAGI, endpoint, slope (pp per dollar), weighted median MAGI. Pivots: Single $32,235 / MFJ $64,471 / HoH $48,353; endpoints at 4/3 of pivot.
 
 ### `data/processed/sipp_modeled.parquet` (36,214 rows = full modeled SIPP frame, incl. out-of-universe persons)
 Canonical frame behind the current-law (1.00×) and expanded-threshold (1.25×/1.50×/2.00×) Saver's Match scenarios. Key columns: `weight`, `age`, `filing_group`, `sm_income_2027` (MAGI proxy), `earnings_2027`, `in_universe`, `has_dc_account`, `any_retirement_access`, `is_participating_dc`, `is_self_employed`, `is_private_sector_employee`, plus per-multiplier flags `is_anymatch_m100` … `is_eligible_dc_m200`, current-law match `sm_match_per_person`, and universal-access match columns `univ_sm_match_m100` … `_m200`. Current-law thresholds (TY2027): Single $20,500–$35,500; MFJ $41,000–$71,000; HoH $30,750–$53,250.

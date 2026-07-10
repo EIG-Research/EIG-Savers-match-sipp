@@ -1,6 +1,6 @@
 # 04 Scenario Diagnostics
 
-Computed at: 2026-06-11 14:08:53.803943
+Computed at: 2026-06-11 17:14:59.960478
 
 SIPP-observed conditional DC participation rate: 0.5897
 

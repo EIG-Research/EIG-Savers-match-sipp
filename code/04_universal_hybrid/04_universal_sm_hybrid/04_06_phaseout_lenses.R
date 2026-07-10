@@ -181,6 +181,17 @@ pivot_obj_list    <- readRDS(file.path(path_data_processed_chr, "pivot_table.rds
 sm_pivot_2024_num <- pivot_obj_list$pivot_vec_num
 stopifnot(filing_group_focus_chr %in% names(sm_pivot_2024_num))
 
+# Schedule parameters the pivots were derived under (set in 04_02; same guard
+# as 04_03/04_05). Passed through to every compute_match_rate() call below so
+# the lens grid is evaluated on the same line that produced the pivots.
+schedule_params_list <- pivot_obj_list$schedule_params_list
+if (is.null(schedule_params_list) ||
+    is.null(schedule_params_list$max_rate_pp_num) ||
+    is.null(schedule_params_list$pivot_rate_pp_num)) {
+  stop("pivot_table.rds has no schedule_params_list (pre-parameterization vintage). ",
+       "Rerun 04_02_compute_pivots.R to regenerate it.", call. = FALSE)
+}
+
 pivot_single_num   <- sm_pivot_2024_num[[filing_group_focus_chr]]
 stopifnot(pivot_single_num > 0)
 
@@ -194,9 +205,11 @@ stopifnot(pivot_single_num > 0)
 #   endpoint = MAGI where the line hits 0  = pivot - rate@pivot/slope = (4/3)*pivot
 eval_rate_fn <- function(magi_num) {
   compute_match_rate(
-    magi_num         = magi_num,
-    filing_group_chr = rep(filing_group_focus_chr, length(magi_num)),
-    pivot_table      = sm_pivot_2024_num
+    magi_num          = magi_num,
+    filing_group_chr  = rep(filing_group_focus_chr, length(magi_num)),
+    pivot_table       = sm_pivot_2024_num,
+    max_rate_pp_num   = schedule_params_list$max_rate_pp_num,
+    pivot_rate_pp_num = schedule_params_list$pivot_rate_pp_num
   )
 }
 floor_pp_num            <- eval_rate_fn(0)
@@ -220,11 +233,7 @@ magi_at_rate_100_num <- magi_at_rate(100)   # rate = 100% (= (2/3) * pivot under
 ###################################################################################
 magi_grid_num <- seq(grid_min_num, grid_max_num, by = grid_step_num)
 
-match_rate_pp_num <- compute_match_rate(
-  magi_num         = magi_grid_num,
-  filing_group_chr = rep(filing_group_focus_chr, length(magi_grid_num)),
-  pivot_table      = sm_pivot_2024_num
-)
+match_rate_pp_num <- eval_rate_fn(magi_grid_num)
 match_rate_frac_num <- match_rate_pp_num / 100
 
 # Required contribution to reach the $1,000 cap = cap / rate. When rate is
@@ -296,11 +305,7 @@ anchor_levels_num <- c(
 )
 anchor_label_chr <- c("$0 MAGI", "Rate = 100%", "Pivot", "Endpoint")
 
-anchor_rate_pp_num <- compute_match_rate(
-  magi_num         = anchor_levels_num,
-  filing_group_chr = rep(filing_group_focus_chr, length(anchor_levels_num)),
-  pivot_table      = sm_pivot_2024_num
-)
+anchor_rate_pp_num <- eval_rate_fn(anchor_levels_num)
 anchor_rate_frac_num <- anchor_rate_pp_num / 100
 anchor_required_num <- ifelse(anchor_rate_frac_num > rate_floor_for_invert_num,
                               match_cap_num / anchor_rate_frac_num,
@@ -500,7 +505,7 @@ fig1_gg <- ggplot2::ggplot(fig1_line_tbl, ggplot2::aes(x = magi_num, y = match_r
   ) +
   ggplot2::scale_y_continuous(
     labels = function(x) paste0(x, "%"),
-    breaks = c(0, 50, 100, 150, 200),
+    breaks = seq(0, floor_pp_num, by = 50),
     expand = ggplot2::expansion(mult = c(0.02, 0.05))
   ) +
   ggplot2::labs(

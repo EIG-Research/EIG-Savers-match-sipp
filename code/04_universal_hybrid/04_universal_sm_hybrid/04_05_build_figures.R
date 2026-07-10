@@ -124,6 +124,21 @@ pivot_obj_list    <- readRDS(file.path(path_data_processed_chr, "pivot_table.rds
 sm_pivot_2024_num <- pivot_obj_list$pivot_vec_num
 simulation_tbl    <- read_parquet(file.path(path_data_processed_chr, "simulation_results.parquet"))
 
+# Schedule parameters the pivots were derived under (set in 04_02; see
+# 04_03 for the same guard). The figures draw the schedule and its endpoints
+# from these so they track any change to the max match rate automatically.
+schedule_params_list <- pivot_obj_list$schedule_params_list
+if (is.null(schedule_params_list) ||
+    is.null(schedule_params_list$max_rate_pp_num) ||
+    is.null(schedule_params_list$pivot_rate_pp_num)) {
+  stop("pivot_table.rds has no schedule_params_list (pre-parameterization vintage). ",
+       "Rerun 04_02_compute_pivots.R to regenerate it.", call. = FALSE)
+}
+max_rate_pp_num     <- schedule_params_list$max_rate_pp_num
+pivot_rate_pp_num   <- schedule_params_list$pivot_rate_pp_num
+# Endpoint multiple of the pivot: R_max / (R_max - R_p); 4/3 at the defaults.
+endpoint_factor_num <- max_rate_pp_num / (max_rate_pp_num - pivot_rate_pp_num)
+
 ###################################################################################
 ###             2) Figure 1: Match-Rate-by-MAGI Schedule                        ###
 ###################################################################################
@@ -135,9 +150,11 @@ magi_grid_num <- seq(0, 90000, by = 500)
 schedule_rows_list <- list()
 for (g in names(sm_pivot_2024_num)) {
   hybrid_rate_pp_num <- compute_match_rate(
-    magi_num         = magi_grid_num,
-    filing_group_chr = rep(g, length(magi_grid_num)),
-    pivot_table      = sm_pivot_2024_num
+    magi_num          = magi_grid_num,
+    filing_group_chr  = rep(g, length(magi_grid_num)),
+    pivot_table       = sm_pivot_2024_num,
+    max_rate_pp_num   = max_rate_pp_num,
+    pivot_rate_pp_num = pivot_rate_pp_num
   )
   schedule_rows_list[[g]] <- data.frame(
     filing_group_chr  = g,
@@ -204,14 +221,16 @@ fig1_gg <- ggplot2::ggplot(schedule_tbl, ggplot2::aes(
   ggplot2::scale_x_continuous(labels = scales::dollar_format(),
                               limits = c(0, 90000)) +
   ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"),
-                               breaks = seq(0, 200, by = 50)) +
+                               breaks = seq(0, max_rate_pp_num, by = 50)) +
   ggplot2::labs(
     x = "MAGI (TY2027 dollars)",
     y = "Match rate (%)",
     color = NULL, linetype = NULL,
     title = "Figure 1. Match rate by MAGI: Expanded Policy vs. current Saver's Match",
-    subtitle = paste0("Expanded Policy: a single straight line per filing group — 200% at $0 MAGI, ",
-                      "declining to 0% at (4/3) × pivot; Single rate is 75% at two-thirds the IRS single-filer median"),
+    subtitle = sprintf(paste0("Expanded Policy: a single straight line per filing group — %d%% at $0 MAGI, ",
+                              "declining to 0%% at %.2f × pivot; Single rate is %d%% at two-thirds the IRS single-filer median"),
+                       round(max_rate_pp_num, 0L), endpoint_factor_num,
+                       round(schedule_params_list$anchor_rate_pp_num, 0L)),
     caption = "Source: Author's analysis of SIPP 2024 Wave 1."
   ) +
   ggplot2::theme_minimal(base_size = 11) +
@@ -330,7 +349,7 @@ if (!file.exists(funnel_csv_path_chr)) {
 # each filing group's zero-match endpoint marked. Gives a distributional view of
 # the MAGI driver and shows where the eligibility band sits in the income
 # distribution. (Diagnostic figure; not embedded in the two-page brief.)
-endpoints_num  <- (4 / 3) * sm_pivot_2024_num     # Single/MFJ/HoH endpoints = (4/3) x pivot
+endpoints_num  <- endpoint_factor_num * sm_pivot_2024_num  # Single/MFJ/HoH endpoints = R_max/(R_max - R_p) x pivot; (4/3) x at the defaults
 dist_x_max_num <- 150000
 dist_tbl <- simulation_tbl |>
   dplyr::filter(!is.na(magi_num), magi_num >= 0, magi_num <= dist_x_max_num) |>

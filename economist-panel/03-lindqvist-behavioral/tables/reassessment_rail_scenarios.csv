@@ -1,0 +1,6 @@
+"scenario","p_w2","p_se","cost_B","participants_M","implied_overall_takeup"
+"Recommended central: W-2 80% / SE 20%",0.8,0.2,16.62,30.52,0.686
+"Upper: Madrian-Shea 86% / SE rails optimistic 30%",0.86,0.3,17.64,32.4,0.729
+"Auto-IRA stay-in: W-2 64% / SE Duflo 14%",0.64,0.14,14.21,26.15,0.588
+"Lower: OregonSaves-effective 34.3% / SE 5.7%",0.343,0.057,9.77,18.13,0.408
+"Recommended W-2 80% / SE Duflo floor 14%",0.8,0.14,16.53,30.34,0.682

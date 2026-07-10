@@ -155,4 +155,78 @@ If one policy emerged from the ten briefs, it would: keep the universal default 
 
 ---
 
+## 8. Re-review (2026-06-11)
+
+The same ten personas re-reviewed the revised, IRS-anchored design in the hybrid format set out in `RE-REVIEW-PLAN.md`: a targeted pass on each panelist's first-round recommendations and their dispositions (`RE-REVIEW-CHANGELOG.md` §C), plus fresh-eyes license including the five focus questions (§F). Each panelist wrote `NN-*/reassessment.md` against the CURRENT DESIGN numbers (44.47M eligible; $14.15B conservative / $19.09B at 80 percent auto-enrollment / $23.87B ceiling; pivots Single $32,235 / HoH $48,353 / MFJ $64,471); several re-ran spot-check scripts (in their `code/` folders) that reproduce the canonical headline figures exactly before perturbing them.
+
+### 8.1 Updated scoreboard
+
+| # | Panelist | Round one | Re-review | Moved? |
+|---|----------|-----------|-----------|--------|
+| 1 | Hale | Oppose as designed | **Oppose as designed** | Label unchanged; materially narrowed. Now affirmatively supports D1, D7, and the federal account (D2). Names three conditions to flip to support-with-modifications: evaluation-gated floor escalation from a 50–100 percent launch, a 12-month hold or net-contribution matching in D6, a pay-for on the access component. |
+| 2 | Vásquez-Cole | Support with modifications | **Support** | **Moved up.** D6 liquidity answered the binding constraint; D5 deferral accepted conditionally. |
+| 3 | Lindqvist | Support with modifications | Support with modifications | Label unchanged; conditions now parameter-level (rail-specific take-up rungs), not architectural. |
+| 4 | Raghunathan | Support with modifications | **Support** | **Moved up.** Anchor and marriage fix independently verified; remaining asks are the endogeneity fix and Tier 2.11. |
+| 5 | Calloway | Oppose as drafted | **Oppose as drafted** | Label unchanged; moved from root-and-branch to conditional opposition. States that decennial reauthorization-with-re-scoring plus a legislated S2-with-sunset and pay-for would get him to support-with-modifications even with the federal account, given statutory guardrails. |
+| 6 | Brandt | Support with modifications | Support with modifications | Narrowed: D7 dissolved her largest objection, D6 deleted the hardest build. D11 (admin-subsidy) condition stands unchanged. |
+| 7 | Okafor | Support with modifications | Support with modifications | Narrowed: indexing fully resolved, scoring gaps mostly. Pay-for is now the load-bearing condition. |
+| 8 | Liu | Support with modifications | Support with modifications | Narrowed from *amputate* the federal account to *insulate* it (procured private administration, substitution rights, Section-6 branding). |
+| 9 | Bridger | Support with modifications | Support with modifications | Firmer support, shorter list; withdrew his re-score demand on the default rate. |
+| 10 | Mwangi | Support with modifications | Support with modifications | Closer to support; exactly one load-bearing condition (legislate S2 with a pre-specified de-escalation default). |
+
+Tally: **2 support / 6 support with modifications / 2 oppose** (was 0/8/2). No panelist moved down. Both opposes are now explicitly conditional, with named paths to support.
+
+### 8.2 Declined recommendations: conceded vs. held
+
+| Decision | Declined recommendation (panelist) | Outcome |
+|---|---|---|
+| **D3** 200% floor | Strip/stage the rate (Hale; Mwangi) | **Held by both — but converged onto one condition.** Both accept that the model cannot adjudicate the floor; both argue model silence is asymmetric because the external evidence (Duflo et al. 2006; Chetty et al. 2014) is one-directional, so the burden sits with launch-at-200. Hale's refreshed decomposition slightly worsened: 82.3 percent of the $14.68B full-participation increment over current law is a rate increase for current-law eligibles (was 79.8). Mwangi recomputes $304 vs. $820 per marginal new saver (default-only vs. hybrid; identical 17.25M new savers) and converts her staging demand into: D3 is acceptable iff S2 is legislated with a pre-specified de-escalation default. Cross-current: Lindqvist prices the floor at only $1.35B (~10 percent of the headline) and would keep it conditional on the randomized arm; Okafor finds it defensible given the $1,000 cap. |
+| **D2** federal account | Swap to EO marketplace / state rails (Calloway; Liu) | **Held by both, softened.** Calloway: the portability rationale answers the wrong alternative — marketplace/state-rail IRAs are worker-portable by construction; his objection was always concentration (recomputed: 57.32M defaulters; $85.6–145.1B annual inflow across the rungs, 2–3× the TSP's $44.7B). Liu: the decline concedes her coalition analysis and overrides it; she now asks for statutory insulation rather than removal. Meanwhile the rest of the panel consolidated *behind* D2 — Hale newly supports it, Bridger calls portability exactly what his churn evidence supports, and Vásquez-Cole, Raghunathan, Okafor, Brandt, and Mwangi all endorse it — so the panel now splits 8–2 in favor, with both holdouts asking for guardrails, not abolition. |
+| **D4** flat 3% default | 5% with auto-escalation (Bridger) | **Held in part.** The legibility rationale does not answer the state evidence (93.3 percent of savers accept the 5 percent default and escalation), but he withdrew the re-score demand — the $1,000 cap makes the default nearly cost-irrelevant — and offers a compromise: keep the 3 percent headline, add the auto-escalator. New warning under this heading: the graduated 1/2/3%-by-FPL costed option *backfires*, cutting the mean match for sub-150 percent-FPL universal-route workers from $471 to $253 (−46 percent), contradicting D3's own bottom-loading bet. |
+| **D8** debt financing | Finance inside the DC-exclusion envelope (Okafor) | **Half-conceded, half-held.** Conceded: debt financing does not flip the national-saving sign — his re-run decomposition gives +$9.7B/yr central net saving at the 80 percent case, carried by the default architecture. Held: as enactability and magnitude — envelope financing would roughly triple net saving, and a ~$216B unoffset ten-year cost is unenactable on the current debt path. Condition: name a pay-for, even as an option set. Hale (access component), Liu, and Calloway press the same demand. |
+| **D5** base contribution deferred | Non-contingent base contribution (Vásquez-Cole) | **Deferral accepted conditionally.** The decile-1 dip it would fix persists on the new pivots ($202 mean match in the bottom eligible earnings decile vs. $479 in decile 2); she wants the option priced jointly with D4 and the dip measured in S2. She also withdrew her first-round person-earnings-eligibility alternative after finding the excluded bottom-decile workers sit in households with median MAGI of $125,556 (81 percent MFJ). |
+| **D1** decennial re-anchor (vs. Calloway's sunset) | CPI + sunset with mandatory re-scoring (Calloway) | **Half-conceded.** C-CPI-U plus the indexed cap genuinely answer the creep dynamics (he formally retires his first-round $24.9B→$36.2B projection), but an automatic re-anchor and a sunset share a calendar with opposite defaults — the ratchet returns at decade frequency. Okafor flags the same mechanism as a sawtooth (a discrete upward step at the FY2037 re-anchor) and wants a statutory corridor; Liu notes each re-anchor year is a scheduled re-score/headline event. |
+
+### 8.3 New convergent findings
+
+**(a) The anchor population is endogenous to the program — the re-review's sharpest new point.** Raghunathan, Calloway, and Hale independently observe that a refundable match that induces non-filers to file mechanically lowers the all-single-filer median, dragging the eligibility frontier down at each decennial re-anchor (Raghunathan shows ⅔-median is a compensating constant: 0.8× filer median ≈ 0.588× worker median, recovering the old geometry within 2 percent). Convergent fix: anchor on single filers **with positive earned income**, and/or a re-anchor corridor (±10 percent per Raghunathan; statutory corridor per Okafor). Brandt adds the operational flaw: SOI publishes with a ~2-year lag, so "the year before implementation" is unadministrable — anchor to the most recent *published* SOI median. Mwangi: publish the filer-vs-worker gap decomposition at each re-anchor.
+
+**(b) The D6 six-month hold is the new contested margin.** Hale identifies annual contribute-$500 → harvest-$1,000 → withdraw cycling as a 2:1 riskless gaming margin the three-year §6433(d)(2) testing period used to block (his fix: 12-month hold or net-contribution matching). Brandt: D6 needs a withdrawal-ordering convention (FIFO) and a forfeiture-reporting feed. Lindqvist and Mwangi: the Roth-liquid/match-forfeitable structure is a comprehension trap — extend the D7 legibility layer to the withdrawal screen. Liu: add a de-minimis tolerance against clawback headlines. On the Tier 2.3 cost bound itself the panel converges that it is small: withdrawal-propensity advice spans 5–15 percent (~$0.8–2B against the headline).
+
+**(c) The 80 percent central case is rejected as a *uniform* rate by essentially the whole panel.** Consensus: 80 percent is defensible only as the W-2 payroll-rail assumption; the self-employed rate is far lower even with the D10 rails. Recommended central estimates cluster between $12.41B (Bridger, state-calibrated with persistence) and $17.9B (Lindqvist, uniform-by-rail) — all below the brief's $19.09B. Near-unanimous presentation advice: the conservative **$14.15B rung should lead external and JCT-facing material** (Okafor, Liu, Hale, Calloway; Bridger would relabel $19.09B an explicitly optimistic rung).
+
+**(d) The RAND safety-net offset cannot carry the financing argument.** Four panelists (Okafor, Liu, Calloway, Brandt) note it lands outside any budget window, and Calloway names an internal contradiction: the offset works only if account balances count against SSI/Medicaid asset tests, while the predictable advocacy is to exclude them. The draft cannot book the offset and grant the exclusion.
+
+**(e) D7 edge cases converge on the same fixes.** Default no-prior-year-return entrants to the most generous band (Brandt, Lindqvist, and Mwangi independently); specify the determination calendar / most-recently-filed-return rule and the *recurring* below-threshold non-filer population, which is larger than the new-entrant case (Brandt); consider a one-way current-year election for falling-income workers facing last year's less-generous rate (Raghunathan).
+
+**(f) S2 is now load-bearing across nearly every verdict.** It appears in the top conditions of Hale, Calloway, Bridger, Mwangi, and Raghunathan, and in the bodies of most others. Mwangi supplies the canonical sketch: a randomized 50/100/200 match-floor arm assigned by tax-unit cohort at universal-account onboarding; pre-registered RD at the endpoints and RKD at the pivots in IRS data (~11.8M workers within ±$5,000 of an endpoint) with a mandatory prior-year-MAGI density test; a decision rule in cost-per-marginal-participant units against the ~$304 default-only benchmark; Treasury OTA data with an independent outside evaluator and statutory deadlines — and, critically, randomization authority reserved *in statute*, since D9 otherwise cedes rollout design to policymakers.
+
+### 8.4 Panel advice on the open Tier-2 assumptions
+
+The changelog asked for parameter advice rather than re-flags; the spread itself is informative:
+
+| Open item | Lindqvist | Bridger | Hale | Calloway | Others |
+|---|---|---|---|---|---|
+| W-2 rail take-up (2.1) | 80% (64–86) | 65% (55–75) | rail blend → ~72% central | 75–85% | Mwangi: high-70s–mid-80s |
+| Self-employed take-up (2.13) | 20% (14–30) | 25% (15–35) | 25% | single digits–20% | Brandt: teens in year one; rails ranked platform > estimated-tax > 1099 |
+| Persistence factor (2.2) | **0.80** (0.70–0.90) — 0.59 embeds employer-keyed churn D2 deletes | **0.70** (0.62–0.75) — active-employee-only counterfactual 0.687 + match margin | keep 0.59 | 0.59 defensible, mildly pessimistic | — |
+| 6-month withdrawal propensity (2.3) | 5% (bound 10) | 15% (10–25) | 5–10% | 5–10% | Mwangi: ≤10% (~$1.4B); month-seven bunching is a free diagnostic |
+| C-CPI-U ~2.7%/yr path (2.4) | — | — | accepted | accepted | **Okafor endorses** as statutorily consistent (wage-indexing would contradict the statute being scored), but: the FY2027–36 window holds only nine tax years — $191.6B in-window vs. $215.8B over ten tax years (11.2 percent gap) — state the deposit-lag convention; show the FY2037 re-anchor step. |
+
+The bands matter most where they disagree: Lindqvist and Bridger bracket both the W-2 rate (80 vs. 65) and persistence (0.80 vs. 0.70) from the same state evidence read through different counterfactuals — exactly the kind of disagreement the rail-specific scenario ladder (Tier 2.1) should carry as rungs. Bridger's stress test is the cautionary composite: 80 percent take-up × 0.70 persistence on the universal route returns $14.13B — persistence claws back essentially all of the auto-enrollment optimism.
+
+### 8.5 New risks logged
+
+1. **Graduated 1/2/3%-by-FPL option backfires** (Bridger): −46 percent mean match for sub-150 percent-FPL universal-route workers; the D4 costed option as specified contradicts D3's bottom-loading rationale.
+2. **D11 admin subsidy remains unbudgeted and is steady-state, not transition** (Brandt, held in full): ~$0.96 first-year fee revenue per account at the 0.15 percent cap vs. ~$20/account cost; ~31.3M federal-route accounts never match-eligible; an implied $1.1–1.7B/yr — 8–12 percent of the $14.15B headline — absent from the cost ladder.
+3. **Hale's decomposition worsened with re-anchoring**: the lower IRS pivots shaved the eligibility frontier, raising the rate-increase share of the full-participation increment to 82.3 percent (11.39M newly eligible at $1,289 each).
+4. **Ten-year-path conventions** (Okafor): arithmetic verified exact, but the memo must state the fiscal-year deposit-lag convention (9 vs. 10 tax years in the window) and display the FY2037 re-anchor step rather than ending the table at FY2036.
+5. **Anchor administrability** (Brandt): the SOI publication lag (~2 years) makes the D1 "year before implementation" anchor unimplementable as written.
+
+### 8.6 What would close the remaining gap
+
+Read together, the re-review's composite ask is much smaller than round one's: (i) legislate S2 with a randomized match-floor arm and a pre-specified de-escalation (or escalation) default — this single item appears in some form in eight of ten reassessments and is the stated price of both opposes; (ii) fix the D1 anchor population (positive-earned-income filers, published-SOI vintage, re-anchor corridor); (iii) lead externally with the $14.15B rung and publish rail-specific rungs; (iv) name a pay-for menu; (v) patch the D6/D7 edge cases (cycling guard, FIFO ordering, most-generous-band entrant default, withdrawal-screen legibility). None of these reverses a Tier 3 decision; all are compatible with the design as adopted.
+
+---
+
 *Each linked assessment was produced by an AI research agent adopting a fictional persona as part of a structured panel exercise; sources and computations are real. See each subfolder's `sources/sources.md` for the evidence base and `code/` for reproducible scripts (run from the repo root with `& "C:\Program Files\R\R-4.4.3\bin\Rscript.exe" <script>`).*

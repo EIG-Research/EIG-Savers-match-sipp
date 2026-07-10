@@ -1,0 +1,11 @@
+"scenario","participants_M","cost_B","pct_of_headline"
+"Current conservative headline (59.0% conditional)",26.23,14.15,100
+"State upper: 62.4% feasible participation",26.97,14.55,102.81
+"State central: 48% positive-balance participation",23.87,12.86,90.9
+"State lower: 34.3% global participation",20.92,11.26,79.57
+"Persistence only, state-observed 0.594 (employer-keyed)",26.23,11.59,81.89
+"Persistence only, portable-account 0.70 (recommended)",26.23,12.32,87.09
+"RECOMMENDED CENTRAL: W-2 65% / SE 25% x persistence 0.70",26.29,12.41,87.73
+"Recommended lower: W-2 55% / SE 15% x persistence 0.62",24.14,11.09,78.35
+"Recommended upper: W-2 75% / SE 35% x persistence 0.75",28.44,13.68,96.66
+"80% everywhere x persistence 0.70 (stress on brief central)",30.75,14.13,99.86

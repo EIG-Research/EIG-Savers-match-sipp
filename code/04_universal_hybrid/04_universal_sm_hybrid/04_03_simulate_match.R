@@ -105,16 +105,15 @@ if (!dir.exists(path_output_reports_chr)) dir.create(path_output_reports_chr, re
 policy_params <- list(
   default_contrib_rate_num = 0.03,
   max_credit_num           = 1000,
-  # NOTE: the two schedule values below are DESCRIPTIVE ONLY. compute_match_rate()
-  # in calibration_cells.R is the single source of truth for the match-rate
-  # schedule and does not read these; they are kept in sync purely for
-  # documentation. 2026-06-08 redesign: floor is 200 percent at $0 MAGI (down
-  # from the 2026-05-28 300 percent), and the 50 percent point sits at the pivot,
-  # which the design anchors (2026-06-11) by fixing the Single rate at 75 percent
-  # at two-thirds the IRS all-single-filer median MAGI (placing the 50 percent
-  # pivot at 0.8x that median and the 0 percent endpoint at (4/3)x pivot = 1.067x).
-  match_rate_floor_pp_num  = 200,
-  match_rate_pivot_pp_num  = 50,
+  # NOTE: the match-rate schedule parameters (max rate at $0 MAGI, rate at the
+  # pivot) are NOT set here. They are set once in 04_02 alongside the pivot
+  # derivation, carried in pivot_table.rds as schedule_params_list, and passed
+  # through to compute_match_rate() in Section 4 below -- so the simulated
+  # schedule cannot drift from the one the pivots were derived under. Current
+  # design (2026-06-11): 200 percent max rate at $0 MAGI, 50 percent at the
+  # pivot, anchored by fixing the Single rate at 75 percent at two-thirds the
+  # IRS all-single-filer median MAGI (placing the 50 percent pivot at 0.8x that
+  # median and the 0 percent endpoint at (4/3)x pivot = 1.067x).
   takeup_no_auto_num       = 0.057,
   takeup_auto_enroll_num   = 0.80,
   takeup_full_num          = 1.00
@@ -149,6 +148,21 @@ if (!file.exists(pivot_rds_path_chr)) {
 universe_tbl      <- read_parquet(universe_parquet_path_chr)
 pivot_obj_list    <- readRDS(pivot_rds_path_chr)
 sm_pivot_2024_num <- pivot_obj_list$pivot_vec_num
+
+# Schedule parameters the pivots were derived under (set in 04_02). Stop --
+# rather than silently falling back to compute_match_rate() defaults -- if the
+# rds predates the parameterization, so a stale pivot table cannot pair with a
+# mismatched schedule. Rerun 04_02 to regenerate.
+schedule_params_list <- pivot_obj_list$schedule_params_list
+if (is.null(schedule_params_list) ||
+    is.null(schedule_params_list$max_rate_pp_num) ||
+    is.null(schedule_params_list$pivot_rate_pp_num)) {
+  stop("pivot_table.rds has no schedule_params_list (pre-parameterization vintage). ",
+       "Rerun 04_02_compute_pivots.R to regenerate it.", call. = FALSE)
+}
+message(sprintf("Schedule parameters (from 04_02): max rate = %d%%, pivot rate = %d%%.",
+                round(schedule_params_list$max_rate_pp_num, 0L),
+                round(schedule_params_list$pivot_rate_pp_num, 0L)))
 
 message(sprintf("Universe: %d rows (weighted M: %.2f).",
                 nrow(universe_tbl),
@@ -200,9 +214,11 @@ for (i in seq_len(nrow(routing_counts_tbl))) {
 universe_tbl <- universe_tbl |>
   dplyr::mutate(
     match_rate_pp_num    = compute_match_rate(
-      magi_num         = magi_num,
-      filing_group_chr = filing_group_chr,
-      pivot_table      = sm_pivot_2024_num
+      magi_num          = magi_num,
+      filing_group_chr  = filing_group_chr,
+      pivot_table       = sm_pivot_2024_num,
+      max_rate_pp_num   = schedule_params_list$max_rate_pp_num,
+      pivot_rate_pp_num = schedule_params_list$pivot_rate_pp_num
     ),
     match_rate_frac_num  = match_rate_pp_num / 100,
     # Contribution base is PERSONAL EARNINGS (earnings_num), not joint MAGI.

@@ -1,0 +1,5 @@
+"scenario","eligible_M","new_savers_M","annual_cost_B","cost_per_new_saver","share_dollars_inframarginal"
+"(i-a) Match-only, opt-in - take-up at largest tested match (50%): 14% gross",44.47,3.9,7.39,1892,0.71
+"(i-b) Match-only, opt-in - linear extrapolation to 200% match: 47% gross",44.47,15.62,13.71,878,0.39
+"(ii) Default-only - universal account + auto-enrollment, current-law section 6433 match",44.47,17.25,5.24,304,0.38
+"(iii) Proposal - universal account + auto-enrollment + hybrid match",44.47,17.25,14.15,820,0.33

@@ -695,26 +695,40 @@ build_modeled_sipp_frame_v2 <- function(raw, seed = 42L) {
 # See Infrastructure/plans/2026-05-27_universal-sm-hybrid-implementation.md
 # Section 6.9 for the approval context.
 #
-# WHAT THE SCHEDULE LOOKS LIKE (one straight line per filing group):
+# WHAT THE SCHEDULE LOOKS LIKE (one straight line per filing group; drawn at
+# the default parameters R_max = 200, R_pivot = 50):
 #
 #   match_rate
 #       |
-#   200%|*
+#   200%|*   <- R_max (max match rate, at MAGI = 0)
 #       | \
 #       |  \
 #       |   \
 #       |    \
-#    50%|-----\------ (pivot point = filing-group 50% MAGI)
+#    50%|-----\------ (pivot point = MAGI where the rate equals R_pivot)
 #       |      \
-#     0%|-------*---- (line crosses zero at (4/3) x pivot)
+#     0%|-------*---- (line crosses zero at the endpoint)
 #       +-------+--+----- MAGI
-#       0     pivot  (4/3) x pivot
+#       0     pivot  endpoint
 #
-# WHY THE GEOMETRY WORKS (200% floor, 50% pivot rate, single straight line):
-#   - One straight line from 200% at MAGI = 0 to 50% at MAGI = pivot.
-#     Slope = (50 - 200) / pivot = -150 / pivot percentage points per dollar.
-#   - The same slope continues past the pivot until the rate hits zero.
-#     Set 200 - (150/pivot) * M = 0 -> M = (4/3) * pivot.
+# PARAMETERIZED GEOMETRY (how the max match rate relates to the line):
+#   Let R_max   = max_rate_pp_num   (rate at MAGI = 0; also the clamp ceiling),
+#       R_pivot = pivot_rate_pp_num (the rate that DEFINES the pivot),
+#       P       = the filing group's pivot (MAGI where the rate = R_pivot).
+#   The whole schedule is one line pinned by (0, R_max) and (P, R_pivot):
+#
+#     rate(M)  = R_max - ((R_max - R_pivot) / P) * M,  clamped to [0, R_max]
+#     slope    = -(R_max - R_pivot) / P                pp per dollar of MAGI
+#     endpoint = P * R_max / (R_max - R_pivot)         MAGI where rate hits 0
+#
+#   Holding the pivot fixed, raising R_max rotates the line counterclockwise
+#   around the pivot point (P, R_pivot): the slope steepens and the endpoint
+#   moves IN toward the pivot (endpoint -> P as R_max -> Inf; endpoint -> Inf
+#   as R_max -> R_pivot from above). At the defaults (R_max = 200, R_pivot =
+#   50): slope = -150 / P and endpoint = (4/3) * P, the figures quoted across
+#   the 04 pipeline. Note that 04_02 derives P itself from the design anchor
+#   holding R_max fixed, so a change to R_max there ALSO moves P; see the
+#   anchor algebra in 04_02_compute_pivots.R Section 3.
 #   - This function is agnostic about WHERE the pivot comes from; 04_02 sets it.
 #     Under the current design (2026-06-11) the Single pivot is 0.8 x the IRS
 #     all-single-filer median MAGI (derived from the design anchor "75% at
@@ -749,19 +763,29 @@ build_modeled_sipp_frame_v2 <- function(raw, seed = 42L) {
 #                     "mfj", "hoh", or NA_character_), same length as magi_num.
 #   pivot_table       named numeric vector of pivots, e.g.
 #                     c(single_mfs = 33750, mfj = 82500, hoh = 45000).
+#   max_rate_pp_num   scalar; the MAX MATCH RATE in percentage points -- the
+#                     rate at MAGI = 0 and the schedule's clamp ceiling.
+#                     Default 200 (the current design).
+#   pivot_rate_pp_num scalar; the rate (pp) the schedule takes AT the pivot.
+#                     Default 50. This defines what "pivot" means, so changing
+#                     it changes the interpretation of pivot_table.
 #
 # RETURNS:
-#   numeric vector of match rates (0 to 200 percentage points), same length
-#   as magi_num. Rows with NA filing_group_chr or unmapped filing groups
-#   return NA_real_. Rows with NA magi_num return NA_real_.
+#   numeric vector of match rates (0 to max_rate_pp_num percentage points),
+#   same length as magi_num. Rows with NA filing_group_chr or unmapped filing
+#   groups return NA_real_. Rows with NA magi_num return NA_real_.
 #
 # DEFENSIVE BEHAVIOR:
 #   - Stops if pivot_table is missing any of the three expected names.
 #   - Stops if any pivot value is non-positive (would produce a divide-by-zero
 #     or a negative-slope schedule).
+#   - Stops unless max_rate_pp_num > pivot_rate_pp_num > 0 (anything else
+#     breaks the declining-line geometry: the slope flips sign or the
+#     endpoint formula divides by zero).
 #   - Returns NA_real_ (not 0) for rows with unresolved inputs so that
 #     downstream aggregations cannot silently drop or zero-fill these rows.
-compute_match_rate <- function(magi_num, filing_group_chr, pivot_table) {
+compute_match_rate <- function(magi_num, filing_group_chr, pivot_table,
+                               max_rate_pp_num = 200, pivot_rate_pp_num = 50) {
   required_groups_chr <- c("single_mfs", "mfj", "hoh")
   if (!all(required_groups_chr %in% names(pivot_table))) {
     stop(sprintf(
@@ -773,6 +797,15 @@ compute_match_rate <- function(magi_num, filing_group_chr, pivot_table) {
   if (any(pivot_table[required_groups_chr] <= 0, na.rm = TRUE) ||
       any(is.na(pivot_table[required_groups_chr]))) {
     stop("pivot_table entries must be strictly positive and non-NA.", call. = FALSE)
+  }
+  if (length(max_rate_pp_num) != 1L || length(pivot_rate_pp_num) != 1L ||
+      is.na(max_rate_pp_num) || is.na(pivot_rate_pp_num) ||
+      pivot_rate_pp_num <= 0 || max_rate_pp_num <= pivot_rate_pp_num) {
+    stop(sprintf(
+      "Schedule parameters must satisfy max_rate_pp_num > pivot_rate_pp_num > 0. Got max = %s, pivot rate = %s.",
+      paste(max_rate_pp_num, collapse = ", "),
+      paste(pivot_rate_pp_num, collapse = ", ")
+    ), call. = FALSE)
   }
 
   # Pivot for each row (NA if filing group is missing or unmapped).
@@ -786,22 +819,25 @@ compute_match_rate <- function(magi_num, filing_group_chr, pivot_table) {
   # Slope of the single straight-line schedule, in percentage points per
   # dollar of MAGI. Negative (rate falls as MAGI rises) and constant across
   # the whole line. Defined only where pivot_num is non-NA and positive.
-  # With a 200% floor at MAGI = 0 and 50% at the pivot, slope is -150/pivot.
-  slope_pp_per_dollar_num <- -150 / pivot_num
+  # General form -(R_max - R_pivot)/pivot; at the defaults (200, 50) this is
+  # the familiar -150/pivot.
+  slope_pp_per_dollar_num <- -(max_rate_pp_num - pivot_rate_pp_num) / pivot_num
 
-  # Single straight line, clamped to [0, 200]. The line reaches zero at
-  # (4/3) * pivot; the lower pmax(0, .) floors it there so higher-MAGI workers
-  # receive no match. The upper pmin(200, .) enforces the design CEILING: 200
-  # percent at MAGI = 0 is both the floor and the maximum rate, so a worker with
-  # negative MAGI (e.g. a business loss) is held at 200 percent rather than drawn
-  # above it. NA propagation: any NA input produces NA output (pmin/pmax keep NA).
+  # Single straight line, clamped to [0, max_rate_pp_num]. The line reaches
+  # zero at pivot * R_max / (R_max - R_pivot) -- (4/3) * pivot at the defaults;
+  # the lower pmax(0, .) floors it there so higher-MAGI workers receive no
+  # match. The upper pmin(max_rate_pp_num, .) enforces the design CEILING: the
+  # max rate at MAGI = 0 is both the intercept and the maximum, so a worker
+  # with negative MAGI (e.g. a business loss) is held at the max rate rather
+  # than drawn above it. NA propagation: any NA input produces NA output
+  # (pmin/pmax keep NA).
   rate_unfloored_num <- dplyr::if_else(
     is.na(magi_num) | is.na(pivot_num),
     NA_real_,
-    200 + slope_pp_per_dollar_num * magi_num
+    max_rate_pp_num + slope_pp_per_dollar_num * magi_num
   )
 
-  pmin(200, pmax(0, rate_unfloored_num))
+  pmin(max_rate_pp_num, pmax(0, rate_unfloored_num))
 }
 
 # ----------------------------------------------------------------------------

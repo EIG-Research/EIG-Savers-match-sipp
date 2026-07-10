@@ -1,0 +1,5 @@
+"label","e1","e2","joint_magi","mfj_rate","married","cohabiting","delta"
+"Equal earners, $20k + $20k",20000,20000,40000,107,1283,1283,0
+"Unequal earners, $30k + $10k",30000,10000,40000,107,1283,1004,279
+"Single earner, $40k + $0",40000,0,40000,107,1000,166,834
+"Single earner, $60k + $0",60000,0,60000,60,1000,0,1000

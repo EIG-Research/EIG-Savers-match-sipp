@@ -1,0 +1,13 @@
+"filing_group_chr","workers_M","unweighted_n","center","bandwidth"
+"hoh",0.59,55,"endpoint",2500
+"mfj",1.67,182,"endpoint",2500
+"single_mfs",3.35,337,"endpoint",2500
+"hoh",1.24,116,"endpoint",5000
+"mfj",2.91,330,"endpoint",5000
+"single_mfs",7.69,761,"endpoint",5000
+"hoh",0.62,68,"pivot",2500
+"mfj",1.43,161,"pivot",2500
+"single_mfs",3.9,366,"pivot",2500
+"hoh",1.39,136,"pivot",5000
+"mfj",2.47,293,"pivot",5000
+"single_mfs",7.31,695,"pivot",5000

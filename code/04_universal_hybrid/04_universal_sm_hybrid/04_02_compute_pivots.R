@@ -238,25 +238,44 @@ message(sprintf(
   irs_proj_factor_num, round(sipp_single_median_num, 0L)
 ))
 
-# Pivot anchor: derive the 50% crossing point (the "pivot" compute_match_rate
-# keys on) from the design anchor "75% at TWO-THIRDS the IRS single median,"
-# holding the 200% floor fixed. With a fixed floor the straight line is pinned
-# by that one anchor point:
-#   slope = (anchor_rate - floor) / anchor_magi
-#   pivot = (50 - floor) / slope            (the MAGI where the rate equals 50%)
-# This lands the 50% crossing at 0.8 x the IRS single median and the 0% endpoint
-# at (4/3)*0.8 = 1.067 x the median.
-anchor_floor_pp_num <- 200
-anchor_rate_pp_num  <- 75
-anchor_frac_num     <- 2 / 3
+# Pivot anchor: derive the pivot-rate crossing point (the "pivot"
+# compute_match_rate keys on) from the design anchor "anchor_rate at
+# anchor_frac x the IRS single median," holding the max match rate fixed.
+# With a fixed max rate (the rate at $0 MAGI) the straight line is pinned by
+# that one anchor point, and everything else follows in closed form. Writing
+# R_max = max_rate_pp_num, R_p = pivot_rate_pp_num, R_a = anchor_rate_pp_num,
+# and M_a = anchor_magi_num:
+#   slope    = (R_a - R_max) / M_a
+#   pivot    = M_a * (R_max - R_p) / (R_max - R_a)   (MAGI where rate = R_p)
+#   endpoint = M_a * R_max / (R_max - R_a)           (MAGI where rate = 0)
+#            = pivot * R_max / (R_max - R_p)
+# HOW THE MAX MATCH RATE MOVES THE LINE (anchor held fixed): raising R_max
+# rotates the line counterclockwise around the anchor point (M_a, R_a), so the
+# slope steepens and BOTH the pivot and the endpoint move IN toward M_a
+# (each -> M_a as R_max -> Inf, and -> Inf as R_max -> R_a from above).
+# At the current parameters (R_max = 200, R_p = 50, R_a = 75, M_a = (2/3) x
+# median): pivot = M_a * 150/125 = 0.8 x the IRS single median and endpoint =
+# M_a * 200/125 = (4/3) * pivot = 1.067 x the median.
+max_rate_pp_num    <- 200     # max match rate R_max: rate at $0 MAGI and clamp ceiling
+pivot_rate_pp_num  <- 50      # rate R_p that defines the pivot (50% crossing)
+anchor_rate_pp_num <- 75      # design-anchor rate R_a
+anchor_frac_num    <- 2 / 3   # design-anchor MAGI as a fraction of the IRS single median
+if (!(max_rate_pp_num > anchor_rate_pp_num &&
+      anchor_rate_pp_num > pivot_rate_pp_num && pivot_rate_pp_num > 0)) {
+  stop("Schedule parameters must satisfy max rate > anchor rate > pivot rate > 0; ",
+       "otherwise the anchored line cannot decline through the pivot to zero.",
+       call. = FALSE)
+}
 anchor_magi_num     <- anchor_frac_num * single_median_num
-anchor_slope_num    <- (anchor_rate_pp_num - anchor_floor_pp_num) / anchor_magi_num
-single_pivot_num    <- (50 - anchor_floor_pp_num) / anchor_slope_num
+anchor_slope_num    <- (anchor_rate_pp_num - max_rate_pp_num) / anchor_magi_num
+single_pivot_num    <- (pivot_rate_pp_num - max_rate_pp_num) / anchor_slope_num
+# Endpoint as a multiple of the pivot: R_max / (R_max - R_p); 4/3 at the defaults.
+endpoint_factor_num <- max_rate_pp_num / (max_rate_pp_num - pivot_rate_pp_num)
 message(sprintf(
-  "Single anchor: %d%% at $%d (= %.3f x IRS median $%d) -> 50%% pivot = $%d, endpoint = $%d",
+  "Single anchor: %d%% at $%d (= %.3f x IRS median $%d) -> %d%% pivot = $%d, endpoint = $%d (%.3f x pivot)",
   anchor_rate_pp_num, round(anchor_magi_num, 0L), anchor_frac_num,
-  round(single_median_num, 0L), round(single_pivot_num, 0L),
-  round((4 / 3) * single_pivot_num, 0L)
+  round(single_median_num, 0L), pivot_rate_pp_num, round(single_pivot_num, 0L),
+  round(endpoint_factor_num * single_pivot_num, 0L), endpoint_factor_num
 ))
 
 # Build the pivot vector by scaling the single anchor.
@@ -277,10 +296,11 @@ pivot_tbl <- dplyr::tibble(
     by = "filing_group_chr"
   ) |>
   dplyr::mutate(
-    # Endpoint = (4/3) * pivot under the 200%-floor / 50%-pivot single line.
-    # (Slope -150/pivot: 200 - (150/pivot) * M = 0 -> M = (4/3) * pivot.)
-    endpoint_num            = (4 / 3) * pivot_num,
-    slope_pp_per_dollar_num = -150 / pivot_num,
+    # Endpoint = pivot * R_max / (R_max - R_p); (4/3) * pivot at the current
+    # parameters. (Slope -(R_max - R_p)/pivot: R_max - ((R_max - R_p)/pivot) * M
+    # = 0 -> M = pivot * R_max / (R_max - R_p).)
+    endpoint_num            = endpoint_factor_num * pivot_num,
+    slope_pp_per_dollar_num = -(max_rate_pp_num - pivot_rate_pp_num) / pivot_num,
     endpoint_vs_data_median_num = endpoint_num - data_median_magi_num
   )
 
@@ -311,7 +331,23 @@ for (i in seq_len(nrow(pivot_tbl))) {
 ###################################################################################
 pivot_rds_path_chr     <- file.path(path_data_processed_chr, "pivot_table.rds")
 pivot_parquet_path_chr <- file.path(path_data_processed_chr, "pivot_table.parquet")
-saveRDS(list(pivot_vec_num = sm_pivot_2024_num, pivot_tbl = pivot_tbl), pivot_rds_path_chr)
+# schedule_params_list carries the schedule parameters the pivots were derived
+# under. Downstream scripts (04_03, 04_05, 04_06) pass max_rate_pp_num and
+# pivot_rate_pp_num through to compute_match_rate() so the simulated schedule
+# can never drift from the one that produced the pivots. anchor_rate_pp_num,
+# anchor_frac_num, and single_median_num are carried for labeling/diagnostics.
+saveRDS(list(
+  pivot_vec_num        = sm_pivot_2024_num,
+  pivot_tbl            = pivot_tbl,
+  schedule_params_list = list(
+    max_rate_pp_num     = max_rate_pp_num,
+    pivot_rate_pp_num   = pivot_rate_pp_num,
+    anchor_rate_pp_num  = anchor_rate_pp_num,
+    anchor_frac_num     = anchor_frac_num,
+    endpoint_factor_num = endpoint_factor_num,
+    single_median_num   = single_median_num
+  )
+), pivot_rds_path_chr)
 write_parquet(pivot_tbl, pivot_parquet_path_chr, compression = "snappy")
 
 diag_path_chr <- file.path(path_output_reports_chr, "pivot_diagnostics.md")
@@ -322,14 +358,21 @@ diag_lines_chr <- c(
   "",
   "## Method",
   "",
-  sprintf("The schedule is a single straight line with a 200 percent floor at $0 MAGI. Per design decision D1 (2026-06-11) the **design anchor** fixes the Single rate at **75 percent at two-thirds the IRS all-single-filer median AGI** (SOI Table 1.2, single + MFS returns; TY2023 median $%d projected to TY2027 $%d at x%.4f). The policy is anchored to administrative IRS data, not the SIPP sample (SIPP relegated to simulation only; the SIPP in-universe single median was $%d, shown for comparison). Holding the floor fixed, the two-thirds anchor places the 50 percent crossing (the pivot `compute_match_rate()` keys on) at 0.8 x the IRS single median and the 0 percent endpoint at (4/3) x pivot = 1.067 x the median. MFJ and HoH pivots are scaled from the Single pivot using the statutory Saver's Match lower-threshold ratios from `sm_calibration_constants()$sm_lower`:",
+  sprintf("The schedule is a single straight line with a %d percent max match rate at $0 MAGI. Per design decision D1 (2026-06-11) the **design anchor** fixes the Single rate at **%d percent at %.3f x the IRS all-single-filer median AGI** (SOI Table 1.2, single + MFS returns; TY2023 median $%d projected to TY2027 $%d at x%.4f). The policy is anchored to administrative IRS data, not the SIPP sample (SIPP relegated to simulation only; the SIPP in-universe single median was $%d, shown for comparison). Holding the max rate fixed, the anchor places the %d percent crossing (the pivot `compute_match_rate()` keys on) at %.3f x the IRS single median and the 0 percent endpoint at %.3f x pivot = %.3f x the median. MFJ and HoH pivots are scaled from the Single pivot using the statutory Saver's Match lower-threshold ratios from `sm_calibration_constants()$sm_lower`:",
+          round(max_rate_pp_num, 0L), round(anchor_rate_pp_num, 0L), anchor_frac_num,
           round(irs_single_median_ty2023_num, 0L), round(single_median_num, 0L),
-          irs_proj_factor_num, round(sipp_single_median_num, 0L)),
+          irs_proj_factor_num, round(sipp_single_median_num, 0L),
+          round(pivot_rate_pp_num, 0L), single_pivot_num / single_median_num,
+          endpoint_factor_num,
+          endpoint_factor_num * single_pivot_num / single_median_num),
   "",
   "- **MFJ ratio:** sm_lower[MFJ] / sm_lower[Single] = 41000 / 20500 = 2.00",
   "- **HoH ratio:** sm_lower[HoH] / sm_lower[Single] = 30750 / 20500 = 1.50",
   "",
-  "Endpoint (where the rate hits zero) = (4/3) x pivot for each filing group. The Single pivot is 0.8 x the IRS single median, so the Single endpoint is 1.067 x that median. For MFJ and HoH the pivot is 2.0 x and 1.5 x the Single pivot, and the endpoint is (4/3) x that pivot. The `data median` column below is the SIPP in-universe median for each group (the population the simulation scores), shown against the IRS-anchored frontier.",
+  sprintf("Endpoint (where the rate hits zero) = %.3f x pivot for each filing group (= max rate / (max rate - pivot rate) = %d / (%d - %d)). The Single pivot is %.3f x the IRS single median, so the Single endpoint is %.3f x that median. For MFJ and HoH the pivot is 2.0 x and 1.5 x the Single pivot, and the endpoint is %.3f x that pivot. The `data median` column below is the SIPP in-universe median for each group (the population the simulation scores), shown against the IRS-anchored frontier.",
+          endpoint_factor_num, round(max_rate_pp_num, 0L), round(max_rate_pp_num, 0L),
+          round(pivot_rate_pp_num, 0L), single_pivot_num / single_median_num,
+          endpoint_factor_num * single_pivot_num / single_median_num, endpoint_factor_num),
   "",
   "## Pivot table",
   "",
@@ -353,7 +396,9 @@ for (i in seq_len(nrow(pivot_tbl))) {
 diag_lines_chr <- c(diag_lines_chr, "",
   "## Interpretation",
   "",
-  "The match rate follows a single straight line per filing group: 200 percent at zero MAGI, declining linearly through 50 percent at the pivot, and continuing at the same slope to zero at (4/3) x pivot. Workers below the pivot receive a match rate above 50 percent; workers between the pivot and the endpoint receive a phased-down match from 50 percent to zero; workers at or above the endpoint receive no match.",
+  sprintf("The match rate follows a single straight line per filing group: %d percent (the max match rate) at zero MAGI, declining linearly through %d percent at the pivot, and continuing at the same slope to zero at %.3f x pivot. Workers below the pivot receive a match rate above %d percent; workers between the pivot and the endpoint receive a phased-down match from %d percent to zero; workers at or above the endpoint receive no match.",
+          round(max_rate_pp_num, 0L), round(pivot_rate_pp_num, 0L), endpoint_factor_num,
+          round(pivot_rate_pp_num, 0L), round(pivot_rate_pp_num, 0L)),
   "",
   "Because MFJ and HoH pivots are anchored to Single via the SM ratios rather than rescaled to each group's own median, the MFJ endpoint may sit well below the MFJ median (capturing a larger share of the MFJ distribution above the endpoint) and the HoH endpoint may sit above the HoH median (capturing more HoH filers within the eligibility band). The `Endpoint - data median` column makes this visible at a glance."
 )
