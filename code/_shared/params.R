@@ -46,6 +46,23 @@ sm_params <- function() {
   takeup_no_auto     <- 0.057
   takeup_auto_enroll <- 0.80
 
+  # --- Automatic seed contribution (universal-hybrid scenario; added 2026-07-28) ---
+  # Flat annual federal deposit to the account of EVERY hybrid-eligible worker,
+  # paid whether or not the worker contributes or participates (so its cost is
+  # invariant to take-up assumptions and it does not count toward the $1,000
+  # match cap). TY2027 nominal dollars; like the statutory thresholds it is a
+  # policy parameter and is NOT scaled by income_projection_factor.
+  # Phased variants (added 2026-07-28) share the same $100 maximum and derive
+  # their geometry from the hybrid match schedule (pivot/endpoint carried in
+  # pivot_table.rds):
+  #   flat            -- $100 for every eligible worker (the headline design)
+  #   pro_rata        -- $100 x match_rate / max_rate (declines along the line)
+  #   flat_then_taper -- $100 to the pivot, then linear to $0 at the endpoint
+  #   extended_taper  -- $100 across the eligible band, then linear to $0 at
+  #                      seed_extended_endpoint_mult x the endpoint
+  auto_seed_amount <- 100
+  seed_extended_endpoint_mult <- 1.25
+
   # --- Universe sub-population caps (used to flag students / dependents) ---
   # 2024 nominal dollars. Previously hard-coded identically in 4 scripts.
   student_earnings_cap  <- 15000
@@ -91,6 +108,8 @@ sm_params <- function() {
     income_projection_factor = income_projection_factor,
     takeup_no_auto = takeup_no_auto,
     takeup_auto_enroll = takeup_auto_enroll,
+    auto_seed_amount = auto_seed_amount,
+    seed_extended_endpoint_mult = seed_extended_endpoint_mult,
     student_earnings_cap = student_earnings_cap,
     dependent_earnings_cap = dependent_earnings_cap,
     contribution_bands = contribution_bands,
@@ -112,11 +131,68 @@ sm_params <- function() {
     abs(sum(contribution_split_alt) - 1) < 1e-9,
     length(contribution_rates) == length(contribution_split_jct),
     match_rate_max > 0, contribution_cap > 0, income_projection_factor > 0,
+    auto_seed_amount >= 0,
+    seed_extended_endpoint_mult > 1,
     # m200 lower must equal 2x base lower (derived, but assert the contract)
     all(abs(threshold_lower_by_multiplier$m200 - 2 * threshold_lower) < 1e-9)
   )
 
   params
+}
+
+# ----------------------------------------------------------------------------
+# rsaa_params() -- S.1526 (119th Congress) Government Match Tax Credit (§25F)
+# constants, for the common-basis RSAA-vs-hybrid comparison (03d_rsaa_comparison.R).
+#
+# Verified against the bill text (economist-panel/_shared/sources/rsaa-s1526-119th-bill-text.pdf),
+# §25F and §2(15), 2026-07-13. See drafts/rsaa_comparison/00_comparison_design_spec.md.
+# Kept SEPARATE from sm_params() so the canonical modeled frame is never touched by
+# RSAA logic; the RSAA module reads sipp_modeled.parquet and computes fresh from these.
+# ----------------------------------------------------------------------------
+rsaa_params <- function() {
+  # §25F(a)(1): 1% automatic credit on gross income.
+  auto_credit_rate <- 0.01
+  # §25F(b): applicable percentage on contributions, by tier of gross income.
+  match_rate_below_kink1 <- 1.00   # 100% of contributions up to 3% of gross income
+  match_rate_between      <- 0.50   # 50% of contributions from 3% to 5%
+  match_kink1 <- 0.03               # 3% of gross income
+  match_kink2 <- 0.05               # 5% of gross income (above this, 0%)
+
+  # §25F(c)(1): credit limit = 5% of the phaseout amount (a filing-status constant).
+  credit_limit_share <- 0.05
+  # §25F(c)(2): limit reduced $75 for each $1,000 (or portion) of gross income over the
+  # phaseout amount.
+  phaseout_slope <- 75 / 1000
+
+  # §25F(c)(3): phaseout amount = multiple of applicable median income M by filing status.
+  #   MFJ = 2.0 M ; HoH = 3/4 of MFJ = 1.5 M ; any other (single/MFS) = 1/2 of MFJ = 1.0 M.
+  phaseout_mult <- c(Single = 1.0, MFS = 1.0, HoH = 1.5, MFJ = 2.0)
+
+  # §25F(c)(4): applicable median income M = most recent Census CPS Median Personal Income,
+  # population 15+. Base value adopted from params.R median_income_2024 ($45,140, 2023 CPS
+  # basis; confirm vintage against Census PINC-01 in methodology review), projected to TY2027
+  # by the repo-wide 1.093 factor so M sits at the same price level as personal_income_2027.
+  median_income_base_2024 <- 45140
+  income_projection_factor <- 1.093
+  applicable_median_income_2027 <- median_income_base_2024 * income_projection_factor
+
+  # Statutory auto-enrollment default contribution rate (§104(a)(2)); headline for both designs.
+  default_contribution_rate <- 0.03
+
+  list(
+    auto_credit_rate = auto_credit_rate,
+    match_rate_below_kink1 = match_rate_below_kink1,
+    match_rate_between = match_rate_between,
+    match_kink1 = match_kink1,
+    match_kink2 = match_kink2,
+    credit_limit_share = credit_limit_share,
+    phaseout_slope = phaseout_slope,
+    phaseout_mult = phaseout_mult,
+    median_income_base_2024 = median_income_base_2024,
+    income_projection_factor = income_projection_factor,
+    applicable_median_income_2027 = applicable_median_income_2027,
+    default_contribution_rate = default_contribution_rate
+  )
 }
 
 # ----------------------------------------------------------------------------

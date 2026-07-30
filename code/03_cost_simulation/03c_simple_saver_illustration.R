@@ -223,6 +223,25 @@ CONTRIBUTION_TIMING <- "end_of_year"
 # standalone $33,350 @ 3 percent comparison export below.
 DOLLAR_MATCH_CAP <- 1000L
 
+# RSAA (S.1526, 119th Congress) Government Match Tax Credit (§25F) ---
+# Added for the four-design comparison column. Verified against the bill text
+# (economist-panel/_shared/sources/rsaa-s1526-119th-bill-text.pdf); mirrors
+# rsaa_params() in code/_shared/params.R. See drafts/rsaa_comparison/00_comparison_design_spec.md.
+#   credit = 1% of gross income + 100% of contributions up to 3% of income
+#            + 50% of contributions from 3-5%, capped at 5% of the phaseout amount,
+#            reduced $75 per $1,000 of income over the phaseout amount.
+# Single-filer phaseout amount = applicable median income M (CPS median personal income,
+# 15+); base $45,140 (2023) projected to TY2027 by 1.093. M is indexed forward at WAGE_GROWTH
+# (median personal income is republished annually and tracks nominal wage growth, not C-CPI-U).
+RSAA_AUTO_CREDIT_RATE     <- 0.01
+RSAA_MATCH_RATE_BELOW_K1  <- 1.00
+RSAA_MATCH_RATE_BETWEEN   <- 0.50
+RSAA_MATCH_KINK1          <- 0.03
+RSAA_MATCH_KINK2          <- 0.05
+RSAA_CREDIT_LIMIT_SHARE   <- 0.05
+RSAA_PHASEOUT_SLOPE       <- 75 / 1000
+RSAA_MEDIAN_INCOME_2027   <- 45140 * 1.093   # single-filer phaseout amount at TY2027 (base year)
+
 # Output toggles ----------------------------------------------------
 # WRITE_FIGURE is FALSE for the 2026-05-11 four-multiplier extension
 # round: ten scenarios on a single panel would be unreadable. A faceted
@@ -749,19 +768,22 @@ comparison_scenarios_tbl <- tibble(
   comparison_id_chr = c(
     "worker_33350_3pct_no_match",
     "worker_33350_3pct_dollar_match",
-    "worker_33350_3pct_savers_match"
+    "worker_33350_3pct_savers_match",
+    "worker_33350_3pct_rsaa"
   ),
   comparison_column_chr = c(
     "Savings without any match",
     "Savings with the dollar for dollar match",
-    "Savings with the savers match"
+    "Savings with the savers match",
+    "Savings with the RSAA credit"
   ),
-  start_earnings_num = c(33350, 33350, 33350),
-  savings_rate_num = c(0.03, 0.03, 0.03),
-  apply_dollar_match_flag = c(FALSE, TRUE, FALSE),
-  apply_savers_match_flag = c(FALSE, FALSE, TRUE),
-  mfj_amount_2027_num = c(NA_real_, NA_real_, SM_MFJ_AMOUNT_2027),
-  mfj_range_2027_num = c(NA_real_, NA_real_, SM_MFJ_RANGE_2027)
+  start_earnings_num = c(33350, 33350, 33350, 33350),
+  savings_rate_num = c(0.03, 0.03, 0.03, 0.03),
+  apply_dollar_match_flag = c(FALSE, TRUE, FALSE, FALSE),
+  apply_savers_match_flag = c(FALSE, FALSE, TRUE, FALSE),
+  apply_rsaa_flag = c(FALSE, FALSE, FALSE, TRUE),
+  mfj_amount_2027_num = c(NA_real_, NA_real_, SM_MFJ_AMOUNT_2027, NA_real_),
+  mfj_range_2027_num = c(NA_real_, NA_real_, SM_MFJ_RANGE_2027, NA_real_)
 )
 
 comparison_results_list <- vector("list", length = nrow(comparison_scenarios_tbl))
@@ -773,6 +795,7 @@ for (i in seq_len(nrow(comparison_scenarios_tbl))) {
   savings_rate_num <- sc$savings_rate_num
   apply_dollar_match_flag <- sc$apply_dollar_match_flag
   apply_savers_match_flag <- sc$apply_savers_match_flag
+  apply_rsaa_flag <- sc$apply_rsaa_flag
   mfj_amount_2027_used_num <- if (is.na(sc$mfj_amount_2027_num)) SM_MFJ_AMOUNT_2027 else sc$mfj_amount_2027_num
   mfj_range_2027_used_num <- if (is.na(sc$mfj_range_2027_num)) SM_MFJ_RANGE_2027 else sc$mfj_range_2027_num
 
@@ -810,7 +833,21 @@ for (i in seq_len(nrow(comparison_scenarios_tbl))) {
         pmin(own_contribution_nominal_num, sm_contrib_cap_num) *
         phaseout_factor_num *
         as.numeric(apply_savers_match_flag),
-      government_match_nominal_num = dollar_match_nominal_num + savers_match_nominal_num,
+      # RSAA §25F: single-filer phaseout amount M indexed forward at WAGE_GROWTH.
+      rsaa_phaseout_amount_num = RSAA_MEDIAN_INCOME_2027 * (1 + WAGE_GROWTH)^(year_idx - 1L),
+      rsaa_tier1_num = pmin(own_contribution_nominal_num, RSAA_MATCH_KINK1 * earnings_nominal_num),
+      rsaa_tier2_num = pmax(0, pmin(own_contribution_nominal_num, RSAA_MATCH_KINK2 * earnings_nominal_num) -
+                              RSAA_MATCH_KINK1 * earnings_nominal_num),
+      rsaa_credit_before_cap_num = RSAA_AUTO_CREDIT_RATE * earnings_nominal_num +
+        RSAA_MATCH_RATE_BELOW_K1 * rsaa_tier1_num + RSAA_MATCH_RATE_BETWEEN * rsaa_tier2_num,
+      # §25F(c)(2): $75 per $1,000 "or portion thereof" -- step function, not linear.
+      rsaa_credit_limit_num = pmax(0, RSAA_CREDIT_LIMIT_SHARE * rsaa_phaseout_amount_num -
+        (RSAA_PHASEOUT_SLOPE * 1000) *
+          ceiling(pmax(0, earnings_nominal_num - rsaa_phaseout_amount_num) / 1000)),
+      rsaa_match_nominal_num = pmin(rsaa_credit_before_cap_num, rsaa_credit_limit_num) *
+        as.numeric(apply_rsaa_flag),
+      government_match_nominal_num = dollar_match_nominal_num + savers_match_nominal_num +
+        rsaa_match_nominal_num,
       total_contribution_nominal_num = own_contribution_nominal_num + government_match_nominal_num
     )
 

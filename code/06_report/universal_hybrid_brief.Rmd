@@ -95,6 +95,29 @@ bottom3_share  <- sum(dec_tbl$share[dec_tbl$dec <= 3])
 bottom_half_sh <- sum(dec_tbl$share[dec_tbl$dec <= 5])
 zero_top_n     <- sum(dec_tbl$share < 0.001)
 
+## ---- Automatic $100 seed contribution (scenario add-on) ----------------------
+# seed_per_worker_num is $100 for every eligible worker and $0 otherwise (04_03),
+# so the seed's incidence uses the same full-universe deciles as the match.
+inc$sw <- inc$seed_per_worker_num * inc$WPFINWGT
+seed_dec_tbl <- inc |>
+  group_by(dec) |>
+  summarise(seed_dollars = sum(sw), .groups = "drop") |>
+  mutate(seed_share = seed_dollars / sum(seed_dollars))
+seed_bottom3_share <- sum(seed_dec_tbl$seed_share[seed_dec_tbl$dec <= 3])
+seed_cost_M_num    <- headline$seed_cost_M_num           # invariant across scenarios
+seed_reach_M_num   <- headline$seed_recipients_M_num     # = eligible count
+seed_only_M_num    <- headline$eligible_count_M_num - headline$participant_count_M_num
+
+## Phased seed variants (04_03 Section 4b; participation-invariant)
+sv_path <- file.path(dp, "seed_variants.parquet")
+sv_avail <- file.exists(sv_path)
+if (sv_avail) {
+  sv <- as.data.frame(read_parquet(sv_path))
+  sv_get <- function(nm) sv[sv$seed_variant_chr == nm, , drop = FALSE][1, ]
+  sv_flat <- sv_get("flat"); sv_pro <- sv_get("pro_rata")
+  sv_tap  <- sv_get("flat_then_taper"); sv_ext <- sv_get("extended_taper")
+}
+
 ## ---- Routing split among eligible workers -----------------------------------
 elig <- sim[sim$eligible_flag %in% TRUE, ]
 route_tbl <- elig |>
@@ -401,6 +424,116 @@ print(kable(contrast, align = c("l","l","l"), row.names = FALSE) |>
   kable_styling(full_width = TRUE, bootstrap_options = c("condensed")))
 cat("\n\nBoth columns apply the same working population at full participation, so the difference reflects design alone — a higher subsidy rate at the bottom, an income-anchored band reaching more workers, and a larger average award.\n")
 ```
+
+## Scenario add-on: an automatic $100 seed contribution
+
+A match, however generous, reaches only workers who contribute. As a scenario extension, the model
+adds an automatic `r d0(100)` annual federal contribution deposited into the account of every
+eligible worker — whether or not the worker contributes anything of their own. The seed does not
+count toward the `r d0(1000)` match cap, and because it is unconditional its cost does not depend
+on the participation assumption.
+
+Three results summarize the scenario:
+
+- **Reach.** The seed reaches all `r mil(seed_reach_M_num)` eligible workers in every scenario. Under
+  the headline 80 percent auto-enrollment case, that includes about `r mil(seed_only_M_num)` eligible
+  workers who would not be contributing and would therefore receive no match at all — the seed is the
+  only federal retirement dollar that reaches them, and it arrives in an account that then exists to
+  receive a tax refund, a windfall, or a future raise.
+- **Cost.** The seed adds about `r bil(seed_cost_M_num)` per year at any participation rate, raising
+  the headline total from `r bil(headline$annual_cost_M_num)` to
+  `r bil(headline$total_cost_incl_seed_M_num)` and the full-participation ceiling to
+  `r bil(s_full$total_cost_incl_seed_M_num)`.
+- **Distribution.** Because the seed is a flat amount per person, its dollars follow the eligible
+  population rather than contribution size: an estimated `r pct(seed_bottom3_share)` of seed dollars
+  flow to the lowest-earning 30 percent of the workforce, and the seed is relatively most important
+  exactly where match dollars are smallest — for workers whose contributions, and therefore matches,
+  are near zero.
+
+```{r seed-cost-tbl}
+seed_cost_tbl <- data.frame(
+  `Participation scenario` = c(
+    "Observed participation behavior (lower bound)",
+    "Automatic enrollment at 80 percent (headline)",
+    "Full participation (upper bound)"),
+  `Match cost` = c(bil(obs_cond$annual_cost_M_num),
+                   bil(headline$annual_cost_M_num), bil(s_full$annual_cost_M_num)),
+  `Seed cost` = c(bil(obs_cond$seed_cost_M_num),
+                  bil(headline$seed_cost_M_num), bil(s_full$seed_cost_M_num)),
+  `Total including seed` = c(bil(obs_cond$total_cost_incl_seed_M_num),
+                             bil(headline$total_cost_incl_seed_M_num),
+                             bil(s_full$total_cost_incl_seed_M_num)),
+  check.names = FALSE
+)
+kable(seed_cost_tbl, align = c("l","r","r","r"), row.names = FALSE) |>
+  kable_styling(full_width = TRUE, bootstrap_options = c("condensed"))
+```
+
+```{r seed-incidence-fig, out.width="74%"}
+seed_png <- file.path(fig_dir, "incidence_seed_vs_match.png")
+if (file.exists(seed_png)) knitr::include_graphics(seed_png)
+```
+<p class="cap">Federal dollars by income decile across the full workforce, decomposing the
+full-participation match (green) and the automatic `r d0(100)` seed (gold). The seed is small
+against the match in dollar terms, but it is the only component that reaches eligible workers who
+do not contribute.</p>
+
+The case for the seed is not the size of the first-year benefit — `r d0(100)` is a modest sum — but
+account formation: it guarantees that every eligible worker ends the year with a funded retirement
+account, shifting the remaining policy problem from opening accounts to growing balances, which a
+future Congress could address by raising the contribution. The caveat travels in the other
+direction: an automatic deposit requires the universal account infrastructure to reach workers the
+payroll system does not, so the seed's administrative burden is concentrated on exactly the workers
+who are hardest to enroll.
+
+### Phasing the seed instead of ending it abruptly
+
+`r if (sv_avail) "" else "<!-- seed_variants.parquet not found; variant table suppressed -->"`
+
+The flat design has one rough edge: a worker just inside the eligibility band receives the full
+`r d0(100)` while a worker one dollar above it receives nothing. Three phased variants remove that
+cliff in different ways, trading cost against how many workers keep the full amount. A *pro-rata*
+seed scales with the match rate itself, declining from `r d0(100)` at zero income along the same
+line as the match. A *flat-then-taper* seed pays the full `r d0(100)` up to the pivot — the income
+where the match rate has fallen to 50 percent — and then declines to zero at the match endpoint,
+mirroring the geometry of the current-law Saver's Match. An *extended-taper* seed pays the full
+`r d0(100)` across the entire eligible band and phases out beyond it, so no eligible worker loses
+anything relative to the flat design and workers just above the band receive a partial seed.
+
+```{r seed-variant-tbl, eval=sv_avail}
+sv_row <- function(s, label) data.frame(
+  `Seed design` = label,
+  `Annual cost` = bil(s$seed_cost_M_num),
+  `Recipients` = mil(s$seed_recipients_M_num),
+  `Receive the full $100` = if (s$seed_full_amount_M_num < 0.5) "—" else mil(s$seed_full_amount_M_num),
+  `Share of seed dollars to the bottom 30%` = pct(s$seed_bottom3_share_num),
+  check.names = FALSE
+)
+sv_tbl <- rbind(
+  sv_row(sv_flat, "Flat $100 (headline)"),
+  sv_row(sv_pro,  "Pro-rata with match rate"),
+  sv_row(sv_tap,  "Flat, then taper"),
+  sv_row(sv_ext,  "Extended taper")
+)
+kable(sv_tbl, align = c("l","r","r","r","r"), row.names = FALSE) |>
+  kable_styling(full_width = TRUE, bootstrap_options = c("condensed"))
+```
+
+```{r seed-variant-fig, out.width="74%"}
+sv_png <- file.path(fig_dir, "seed_variant_schedules.png")
+if (file.exists(sv_png)) knitr::include_graphics(sv_png)
+```
+<p class="cap">The four seed designs for a single filer. The flat design stops abruptly at the match
+endpoint; the phased variants remove the cliff by declining inside the band (pro-rata,
+flat-then-taper) or by extending past it (extended taper).</p>
+
+The choice among them is a policy dial rather than a modeling question. The pro-rata design is the
+cheapest`r if (sv_avail) paste0(" (", bil(sv_pro$seed_cost_M_num), ")") else ""` and the most
+tightly targeted, but it undercuts the account-seeding rationale — most recipients get a deposit
+well short of `r d0(100)`. The flat-then-taper design preserves the full seed for the lower half of
+the band at modest savings. The extended taper is the most generous`r if (sv_avail) paste0(" (",
+bil(sv_ext$seed_cost_M_num), ", reaching ", mil(sv_ext$seed_recipients_M_num), " workers)") else ""`
+and treats the boundary problem by reaching past it rather than shrinking inside it.
 
 ## How the estimates were produced, and what to keep in mind
 

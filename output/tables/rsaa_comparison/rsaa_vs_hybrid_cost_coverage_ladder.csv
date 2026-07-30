@@ -1,0 +1,7 @@
+"design","scenario","eligible_M","participants_M","takeup_rate","avg_credit_per_participant","annual_cost_M"
+"Universal Saver's Match (hybrid)","sipp_observed_conditional",44.47,26.23,0.59,539,14146
+"RSAA (S.1526)","sipp_observed_conditional",41.39,24.42,0.59,1575,38455
+"Universal Saver's Match (hybrid)","auto_enroll_80pct",44.47,35.58,0.8,537,19092
+"RSAA (S.1526)","auto_enroll_80pct",41.39,33.11,0.8,1575,52142
+"Universal Saver's Match (hybrid)","full_participation_100pct",44.47,44.47,1,537,23866
+"RSAA (S.1526)","full_participation_100pct",41.39,41.39,1,1575,65178

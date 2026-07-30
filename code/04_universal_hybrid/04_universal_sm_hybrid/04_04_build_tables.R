@@ -6,8 +6,11 @@
 #
 # DESCRIPTION:
 # Build three xlsx outputs:
-#   1. hybrid_headline.xlsx                  -- one row per scenario
-#   2. hybrid_distributional_incidence.xlsx  -- match-dollar share by income decile
+#   1. hybrid_headline.xlsx                  -- one row per scenario, match cost plus
+#                                               the automatic $100 seed (cost, reach,
+#                                               and combined total)
+#   2. hybrid_distributional_incidence.xlsx  -- match-dollar AND seed-dollar share by
+#                                               income decile
 #   3. hybrid_by_route.xlsx                  -- breakdown by routing (employer vs. universal)
 #
 # Inputs:
@@ -131,11 +134,42 @@ headline_tbl <- scenarios_tbl |>
     takeup_rate          = takeup_rate_num,
     avg_match_per_person = avg_match_per_person_num,
     annual_cost_M_USD    = annual_cost_M_num,
-    annual_cost_B_USD    = round(annual_cost_M_num / 1000, 2L)
+    annual_cost_B_USD    = round(annual_cost_M_num / 1000, 2L),
+    # Automatic $100 seed: reaches every eligible worker regardless of
+    # participation, so seed reach = eligible_M in every scenario and the
+    # seed cost is invariant to the take-up assumption.
+    seed_recipients_M          = seed_recipients_M_num,
+    seed_cost_M_USD            = seed_cost_M_num,
+    seed_cost_B_USD            = round(seed_cost_M_num / 1000, 2L),
+    total_cost_incl_seed_M_USD = total_cost_incl_seed_M_num,
+    total_cost_incl_seed_B_USD = round(total_cost_incl_seed_M_num / 1000, 2L)
   )
 
+# Phased seed variants (from 04_03 Section 4b): one participation-invariant
+# row per variant, written as a second sheet so the headline workbook carries
+# the full seed menu.
+seed_variants_path_chr <- file.path(path_data_processed_chr, "seed_variants.parquet")
+seed_variants_tbl <- if (file.exists(seed_variants_path_chr)) {
+  read_parquet(seed_variants_path_chr) |>
+    dplyr::transmute(
+      seed_variant           = seed_variant_chr,
+      seed_cost_M_USD        = seed_cost_M_num,
+      seed_cost_B_USD        = round(seed_cost_M_num / 1000, 2L),
+      recipients_M           = seed_recipients_M_num,
+      full_amount_recipients_M = seed_full_amount_M_num,
+      avg_seed_per_recipient = avg_seed_per_recipient_num,
+      bottom3_decile_share   = seed_bottom3_share_num
+    )
+} else {
+  warning("seed_variants.parquet not found; run 04_03 first. Writing headline sheet only.",
+          call. = FALSE)
+  NULL
+}
+
 headline_xlsx_path_chr <- file.path(path_output_tables_chr, "hybrid_headline.xlsx")
-write.xlsx(list(scenarios = headline_tbl), headline_xlsx_path_chr, overwrite = TRUE)
+headline_sheets_list <- list(scenarios = headline_tbl)
+if (!is.null(seed_variants_tbl)) headline_sheets_list$seed_variants <- seed_variants_tbl
+write.xlsx(headline_sheets_list, headline_xlsx_path_chr, overwrite = TRUE)
 message("Wrote: ", headline_xlsx_path_chr)
 
 ###################################################################################
@@ -186,11 +220,17 @@ incidence_pooled_eligible_tbl <- simulation_tbl |>
     mean_match_per_worker_full_num = sum(match_per_worker_num * WPFINWGT, na.rm = TRUE) /
                                        sum(WPFINWGT, na.rm = TRUE),
     total_match_dollars_M_full_num = sum(match_per_worker_num * WPFINWGT, na.rm = TRUE) / 1e6,
+    total_seed_dollars_M_num       = sum(seed_per_worker_num * WPFINWGT, na.rm = TRUE) / 1e6,
     .groups = "drop"
   ) |>
   dplyr::mutate(
+    total_federal_dollars_M_full_num = total_match_dollars_M_full_num + total_seed_dollars_M_num,
     share_of_full_dollars_num = total_match_dollars_M_full_num /
-                                 sum(total_match_dollars_M_full_num, na.rm = TRUE)
+                                 sum(total_match_dollars_M_full_num, na.rm = TRUE),
+    share_of_seed_dollars_num = total_seed_dollars_M_num /
+                                 sum(total_seed_dollars_M_num, na.rm = TRUE),
+    share_of_federal_dollars_incl_seed_num = total_federal_dollars_M_full_num /
+                                 sum(total_federal_dollars_M_full_num, na.rm = TRUE)
   )
 
 # 3b) Pooled-universe deciles -- deciles on the full universe, including
@@ -221,11 +261,17 @@ incidence_pooled_universe_tbl <- simulation_tbl |>
     mean_match_per_worker_full_num   = sum(match_per_worker_zerofill_num * WPFINWGT, na.rm = TRUE) /
                                          sum(WPFINWGT, na.rm = TRUE),
     total_match_dollars_M_full_num   = sum(match_per_worker_zerofill_num * WPFINWGT, na.rm = TRUE) / 1e6,
+    total_seed_dollars_M_num         = sum(seed_per_worker_num * WPFINWGT, na.rm = TRUE) / 1e6,
     .groups = "drop"
   ) |>
   dplyr::mutate(
+    total_federal_dollars_M_full_num = total_match_dollars_M_full_num + total_seed_dollars_M_num,
     share_of_full_dollars_num = total_match_dollars_M_full_num /
-                                 sum(total_match_dollars_M_full_num, na.rm = TRUE)
+                                 sum(total_match_dollars_M_full_num, na.rm = TRUE),
+    share_of_seed_dollars_num = total_seed_dollars_M_num /
+                                 sum(total_seed_dollars_M_num, na.rm = TRUE),
+    share_of_federal_dollars_incl_seed_num = total_federal_dollars_M_full_num /
+                                 sum(total_federal_dollars_M_full_num, na.rm = TRUE)
   )
 
 # 3c) Within-filing-status deciles -- one set of deciles per filing group,
@@ -264,12 +310,16 @@ incidence_within_filing_tbl <- simulation_tbl |>
     mean_match_per_worker_full_num   = sum(match_per_worker_zerofill_num * WPFINWGT, na.rm = TRUE) /
                                          sum(WPFINWGT, na.rm = TRUE),
     total_match_dollars_M_full_num   = sum(match_per_worker_zerofill_num * WPFINWGT, na.rm = TRUE) / 1e6,
+    total_seed_dollars_M_num         = sum(seed_per_worker_num * WPFINWGT, na.rm = TRUE) / 1e6,
     .groups = "drop"
   ) |>
   dplyr::group_by(filing_group_chr) |>
   dplyr::mutate(
+    total_federal_dollars_M_full_num = total_match_dollars_M_full_num + total_seed_dollars_M_num,
     share_of_filing_group_dollars_num = total_match_dollars_M_full_num /
-                                          sum(total_match_dollars_M_full_num, na.rm = TRUE)
+                                          sum(total_match_dollars_M_full_num, na.rm = TRUE),
+    share_of_filing_group_seed_num    = total_seed_dollars_M_num /
+                                          sum(total_seed_dollars_M_num, na.rm = TRUE)
   ) |>
   dplyr::ungroup() |>
   # Compute match rate at each decile's median MAGI, then derive the
@@ -335,6 +385,7 @@ route_tbl <- simulation_tbl |>
     mean_match_rate_pp_num        = sum(match_rate_pp_num * WPFINWGT, na.rm = TRUE) /
                                       sum(WPFINWGT, na.rm = TRUE),
     full_participation_cost_M_num = sum(match_per_worker_num * WPFINWGT, na.rm = TRUE) / 1e6,
+    seed_cost_M_num               = sum(seed_per_worker_num * WPFINWGT, na.rm = TRUE) / 1e6,
     .groups = "drop"
   )
 

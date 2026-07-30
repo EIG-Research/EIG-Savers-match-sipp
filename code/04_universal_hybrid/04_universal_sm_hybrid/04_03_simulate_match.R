@@ -22,6 +22,15 @@
 #                universal-account workers.
 #   Sensitivity: 5.7%, 80%, 100% take-up.
 #
+# Automatic seed contribution (added 2026-07-28): every eligible worker also
+# receives a flat $100 annual federal deposit (params.R auto_seed_amount),
+# paid whether or not they contribute. Seed cost = eligible count x $100 in
+# every scenario (invariant to take-up); reported alongside the match cost as
+# seed_cost_M_num and total_cost_incl_seed_M_num. Three PHASED variants
+# (pro_rata, flat_then_taper, extended_taper; Section 4b) are computed per
+# worker and summarized in seed_variants.parquet; the flat design remains the
+# headline and is the only one folded into the scenario cost columns.
+#
 # Inputs:
 #   data/processed/universal_sm_hybrid/universe_dec.parquet
 #   data/processed/universal_sm_hybrid/pivot_table.rds
@@ -29,6 +38,7 @@
 # Outputs:
 #   data/processed/universal_sm_hybrid/simulation_results.parquet
 #   data/processed/universal_sm_hybrid/scenario_results.parquet
+#   data/processed/universal_sm_hybrid/seed_variants.parquet
 #   output/reports/universal_sm_hybrid/scenario_diagnostics.md
 
 rm(list = ls())
@@ -90,6 +100,7 @@ if (is.na(project_root)) {
 message("Using project_root: ", project_root)
 
 source(file.path(project_root, "code", "_shared", "calibration_cells.R"))
+source(file.path(project_root, "code", "_shared", "params.R"))
 
 ###################################################################################
 ###                         Configuration and Paths                             ###
@@ -116,7 +127,12 @@ policy_params <- list(
   # median and the 0 percent endpoint at (4/3)x pivot = 1.067x).
   takeup_no_auto_num       = 0.057,
   takeup_auto_enroll_num   = 0.80,
-  takeup_full_num          = 1.00
+  takeup_full_num          = 1.00,
+  # Automatic $100 seed contribution: paid to every ELIGIBLE worker whether or
+  # not they contribute, so its cost depends only on the eligible count, never
+  # on the participation scenario, and it sits outside the $1,000 match cap.
+  # Single source of truth is params.R (sm_params()$auto_seed_amount).
+  auto_seed_amount_num     = sm_params()$auto_seed_amount
 )
 
 stopifnot(
@@ -129,7 +145,8 @@ stopifnot(
           policy_params$takeup_full_num) >= 0) &&
     all(c(policy_params$takeup_no_auto_num,
           policy_params$takeup_auto_enroll_num,
-          policy_params$takeup_full_num) <= 1)
+          policy_params$takeup_full_num) <= 1),
+  "auto_seed_amount_num must be >= 0" = policy_params$auto_seed_amount_num >= 0
 )
 
 ###################################################################################
@@ -243,6 +260,11 @@ universe_tbl <- universe_tbl |>
       is.na(match_rate_pp_num) ~ FALSE,
       match_rate_pp_num > 0    ~ TRUE,
       TRUE                      ~ FALSE
+    ),
+    # Automatic seed contribution: every eligible worker receives the flat
+    # amount regardless of contribution/participation; ineligibles receive $0.
+    seed_per_worker_num = dplyr::if_else(
+      eligible_flag, policy_params$auto_seed_amount_num, 0
     )
   )
 
@@ -250,6 +272,98 @@ eligible_n_int     <- sum(universe_tbl$eligible_flag, na.rm = TRUE)
 eligible_wgt_M_num <- sum(universe_tbl$WPFINWGT[universe_tbl$eligible_flag], na.rm = TRUE) / 1e6
 message(sprintf("Eligible workers: %d unweighted (%.2f M weighted)",
                 eligible_n_int, eligible_wgt_M_num))
+
+###################################################################################
+###          4b) Phased Seed Variants (per-worker amounts + summary)             ###
+###################################################################################
+# Three phased alternatives to the flat $100 seed, sharing its $100 maximum and
+# deriving their geometry from the match schedule (see params.R):
+#   pro_rata        -- $100 x match_rate / max_rate; declines along the line.
+#   flat_then_taper -- $100 to the pivot, then linear to $0 at the endpoint.
+#   extended_taper  -- $100 across the eligible band, then linear to $0 at
+#                      seed_extended_endpoint_mult x the endpoint. This variant
+#                      pays some INELIGIBLE workers (just above the band), so it
+#                      is computed over the full universe, not the eligible set.
+seed_endpoint_factor_num <- schedule_params_list$max_rate_pp_num /
+  (schedule_params_list$max_rate_pp_num - schedule_params_list$pivot_rate_pp_num)
+seed_ext_mult_num <- sm_params()$seed_extended_endpoint_mult
+
+universe_tbl <- universe_tbl |>
+  dplyr::mutate(
+    seed_pivot_num    = unname(sm_pivot_2024_num[filing_group_chr]),
+    seed_endpoint_num = seed_endpoint_factor_num * seed_pivot_num,
+    seed_pro_rata_num = dplyr::if_else(
+      eligible_flag,
+      policy_params$auto_seed_amount_num * match_rate_pp_num /
+        schedule_params_list$max_rate_pp_num,
+      0
+    ),
+    seed_flat_taper_num = dplyr::case_when(
+      !eligible_flag                ~ 0,
+      magi_num <= seed_pivot_num    ~ policy_params$auto_seed_amount_num,
+      magi_num <  seed_endpoint_num ~ policy_params$auto_seed_amount_num *
+        (seed_endpoint_num - magi_num) / (seed_endpoint_num - seed_pivot_num),
+      TRUE                          ~ 0
+    ),
+    seed_extended_num = dplyr::case_when(
+      eligible_flag ~ policy_params$auto_seed_amount_num,
+      !is.na(magi_num) & magi_num >= seed_endpoint_num &
+        magi_num < seed_ext_mult_num * seed_endpoint_num ~
+        policy_params$auto_seed_amount_num *
+          (seed_ext_mult_num * seed_endpoint_num - magi_num) /
+          ((seed_ext_mult_num - 1) * seed_endpoint_num),
+      TRUE ~ 0
+    )
+  )
+
+# Variant summary: cost and reach are participation-invariant (the seed is
+# unconditional), so one row per variant suffices. The flat variant column
+# (seed_per_worker_num) was set in Section 4 above alongside eligibility.
+# bottom3 share uses weighted deciles over the FULL universe (same convention
+# as 04_04's pooled_universe_deciles and the Figure 2/5 incidence charts).
+decile_order_idx <- order(universe_tbl$magi_num)
+decile_cum_w_num <- cumsum(universe_tbl$WPFINWGT[decile_order_idx])
+universe_decile_int <- integer(nrow(universe_tbl))
+universe_decile_int[decile_order_idx] <-
+  pmin(10L, floor(decile_cum_w_num / decile_cum_w_num[length(decile_cum_w_num)] * 10) + 1L)
+
+summarize_seed_variant <- function(col_chr, label_chr) {
+  s_num <- universe_tbl[[col_chr]]
+  w_num <- universe_tbl$WPFINWGT
+  cost_num  <- sum(s_num * w_num, na.rm = TRUE)
+  reach_num <- sum(w_num[s_num > 0], na.rm = TRUE)
+  full_num  <- sum(w_num[s_num >= policy_params$auto_seed_amount_num - 1e-9], na.rm = TRUE)
+  dollars_num <- s_num * w_num
+  bottom3_num <- sum(dollars_num[universe_decile_int <= 3L], na.rm = TRUE) / cost_num
+  data.frame(
+    seed_variant_chr           = label_chr,
+    seed_cost_M_num            = round(cost_num / 1e6, 0L),
+    seed_recipients_M_num      = round(reach_num / 1e6, 2L),
+    seed_full_amount_M_num     = round(full_num / 1e6, 2L),
+    avg_seed_per_recipient_num = round(cost_num / reach_num, 0L),
+    seed_bottom3_share_num     = round(bottom3_num, 4L),
+    stringsAsFactors = FALSE
+  )
+}
+
+seed_variants_tbl <- dplyr::bind_rows(
+  summarize_seed_variant("seed_per_worker_num", "flat"),
+  summarize_seed_variant("seed_pro_rata_num",   "pro_rata"),
+  summarize_seed_variant("seed_flat_taper_num", "flat_then_taper"),
+  summarize_seed_variant("seed_extended_num",   "extended_taper")
+)
+message("Seed variant summary (participation-invariant):")
+for (i in seq_len(nrow(seed_variants_tbl))) {
+  message(sprintf(
+    "  %-16s cost_M = $%5d  recipients_M = %5.2f  full_amount_M = %5.2f  avg = $%3d  bottom3 = %5.1f%%",
+    seed_variants_tbl$seed_variant_chr[i],
+    seed_variants_tbl$seed_cost_M_num[i],
+    seed_variants_tbl$seed_recipients_M_num[i],
+    seed_variants_tbl$seed_full_amount_M_num[i],
+    seed_variants_tbl$avg_seed_per_recipient_num[i],
+    100 * seed_variants_tbl$seed_bottom3_share_num[i]
+  ))
+}
 
 ###################################################################################
 ###     5) Compute SIPP-Observed Conditional DC Participation Rate (scalar)     ###
@@ -330,6 +444,10 @@ run_scenario <- function(df,
     total_sm_cost_num / total_participants_wgt_num
   } else NA_real_
 
+  # Automatic seed: unconditional on participation, so it reaches the FULL
+  # eligible population in every scenario and its cost is invariant to take-up.
+  total_seed_cost_num <- total_eligible_wgt_num * policy_params$auto_seed_amount_num
+
   list(
     scenario_name_chr        = scenario_name_chr,
     scenario_group_chr       = scenario_group_chr,
@@ -337,7 +455,10 @@ run_scenario <- function(df,
     participant_count_M_num  = round(total_participants_wgt_num / 1e6, 2L),
     takeup_rate_num          = if (total_eligible_wgt_num > 0) round(total_participants_wgt_num / total_eligible_wgt_num, 4L) else NA_real_,
     avg_match_per_person_num = round(avg_match_per_participant_num, 0L),
-    annual_cost_M_num        = round(total_sm_cost_num / 1e6, 0L)
+    annual_cost_M_num        = round(total_sm_cost_num / 1e6, 0L),
+    seed_recipients_M_num    = round(total_eligible_wgt_num / 1e6, 2L),
+    seed_cost_M_num          = round(total_seed_cost_num / 1e6, 0L),
+    total_cost_incl_seed_M_num = round((total_sm_cost_num + total_seed_cost_num) / 1e6, 0L)
   )
 }
 
@@ -382,6 +503,11 @@ headline_avg_match_num <- if (headline_participants_M_num > 0) {
   )
 } else NA_real_
 
+# Seed cost from the single UNROUNDED eligible total (same double-rounding
+# rationale as the eligible count above): eligible_wgt_M_num is already in
+# millions, so x $100 per person gives the seed cost directly in $M.
+headline_seed_cost_M_num <- round(eligible_wgt_M_num * policy_params$auto_seed_amount_num, 0L)
+
 headline_combined_list <- list(
   scenario_name_chr        = "headline_sipp_observed_conditional",
   scenario_group_chr       = "headline",
@@ -389,7 +515,10 @@ headline_combined_list <- list(
   participant_count_M_num  = headline_participants_M_num,
   takeup_rate_num          = if (headline_eligible_M_num > 0) round(headline_participants_M_num / headline_eligible_M_num, 4L) else NA_real_,
   avg_match_per_person_num = headline_avg_match_num,
-  annual_cost_M_num        = headline_cost_M_num
+  annual_cost_M_num        = headline_cost_M_num,
+  seed_recipients_M_num    = headline_eligible_M_num,
+  seed_cost_M_num          = headline_seed_cost_M_num,
+  total_cost_incl_seed_M_num = headline_cost_M_num + headline_seed_cost_M_num
 )
 
 # Note: the former 5.7% "no-auto-enrollment floor" sensitivity (anchored on the
@@ -423,22 +552,35 @@ scenarios_tbl <- dplyr::bind_rows(lapply(scenarios_list, as.data.frame))
 message("Scenario results:")
 for (i in seq_len(nrow(scenarios_tbl))) {
   message(sprintf(
-    "  %-40s %-12s  eligible_M = %5.2f  participants_M = %5.2f  takeup = %.4f  avg = $%4d  cost_M = $%5d",
+    "  %-40s %-12s  eligible_M = %5.2f  participants_M = %5.2f  takeup = %.4f  avg = $%4d  cost_M = $%5d  seed_M = $%5d  total_M = $%5d",
     scenarios_tbl$scenario_name_chr[i],
     scenarios_tbl$scenario_group_chr[i],
     scenarios_tbl$eligible_count_M_num[i],
     scenarios_tbl$participant_count_M_num[i],
     scenarios_tbl$takeup_rate_num[i],
     scenarios_tbl$avg_match_per_person_num[i],
-    scenarios_tbl$annual_cost_M_num[i]
+    scenarios_tbl$annual_cost_M_num[i],
+    scenarios_tbl$seed_cost_M_num[i],
+    scenarios_tbl$total_cost_incl_seed_M_num[i]
   ))
 }
+
+# Sanity gate: the seed is a flat per-eligible amount, so every scenario row's
+# seed cost must equal its (unrounded-basis) eligible count x the seed amount
+# to within $1M of rounding slack, and single-population rows must agree with
+# the headline seed cost.
+stopifnot(
+  "seed cost must equal eligible count x seed amount (within rounding)" =
+    all(abs(scenarios_tbl$seed_cost_M_num -
+              scenarios_tbl$seed_recipients_M_num * policy_params$auto_seed_amount_num) <= 1)
+)
 
 ###################################################################################
 ###                  8) Write Scenario Results and Per-Row Simulation           ###
 ###################################################################################
 scenarios_parquet_path_chr  <- file.path(path_data_processed_chr, "scenario_results.parquet")
 simulation_parquet_path_chr <- file.path(path_data_processed_chr, "simulation_results.parquet")
+seed_variants_parquet_path_chr <- file.path(path_data_processed_chr, "seed_variants.parquet")
 
 # Defensive verification: write_parquet() can silently fail on Windows when the
 # target file is held open by another process (RStudio viewer, Power BI, etc.).
@@ -453,6 +595,7 @@ script_write_start_time <- as.POSIXct(trunc(Sys.time(), units = "secs"))
 
 write_parquet(scenarios_tbl, scenarios_parquet_path_chr, compression = "snappy")
 write_parquet(universe_tbl,  simulation_parquet_path_chr, compression = "snappy")
+write_parquet(seed_variants_tbl, seed_variants_parquet_path_chr, compression = "snappy")
 
 verify_parquet_fresh <- function(path_chr, must_be_after_time) {
   if (!file.exists(path_chr)) {
@@ -487,6 +630,7 @@ verify_parquet_fresh <- function(path_chr, must_be_after_time) {
 }
 verify_parquet_fresh(scenarios_parquet_path_chr,  script_write_start_time)
 verify_parquet_fresh(simulation_parquet_path_chr, script_write_start_time)
+verify_parquet_fresh(seed_variants_parquet_path_chr, script_write_start_time)
 
 # ------------------------------------------------------------
 # EXTERNAL VALIDATION (mirrors 03a's external-validation block)
@@ -570,26 +714,46 @@ diag_lines_chr <- c(
   "",
   "## Scenario results",
   "",
-  "| Scenario | Group | Eligible (M) | Participants (M) | Take-up | Avg match | Annual cost ($M) |",
-  "|---|---|---|---|---|---|---|"
+  "| Scenario | Group | Eligible (M) | Participants (M) | Take-up | Avg match | Match cost ($M) | Seed cost ($M) | Total incl. seed ($M) |",
+  "|---|---|---|---|---|---|---|---|---|"
 )
 for (i in seq_len(nrow(scenarios_tbl))) {
   diag_lines_chr <- c(diag_lines_chr, sprintf(
-    "| %s | %s | %.2f | %.2f | %.4f | $%d | $%d |",
+    "| %s | %s | %.2f | %.2f | %.4f | $%d | $%d | $%d | $%d |",
     scenarios_tbl$scenario_name_chr[i],
     scenarios_tbl$scenario_group_chr[i],
     scenarios_tbl$eligible_count_M_num[i],
     scenarios_tbl$participant_count_M_num[i],
     scenarios_tbl$takeup_rate_num[i],
     scenarios_tbl$avg_match_per_person_num[i],
-    scenarios_tbl$annual_cost_M_num[i]
+    scenarios_tbl$annual_cost_M_num[i],
+    scenarios_tbl$seed_cost_M_num[i],
+    scenarios_tbl$total_cost_incl_seed_M_num[i]
+  ))
+}
+diag_lines_chr <- c(diag_lines_chr, "",
+  "## Seed variants (participation-invariant)",
+  "",
+  "| Variant | Cost ($M) | Recipients (M) | Full $100 (M) | Avg per recipient | Bottom-3-decile share |",
+  "|---|---|---|---|---|---|")
+for (i in seq_len(nrow(seed_variants_tbl))) {
+  diag_lines_chr <- c(diag_lines_chr, sprintf(
+    "| %s | $%d | %.2f | %.2f | $%d | %.1f%% |",
+    seed_variants_tbl$seed_variant_chr[i],
+    seed_variants_tbl$seed_cost_M_num[i],
+    seed_variants_tbl$seed_recipients_M_num[i],
+    seed_variants_tbl$seed_full_amount_M_num[i],
+    seed_variants_tbl$avg_seed_per_recipient_num[i],
+    100 * seed_variants_tbl$seed_bottom3_share_num[i]
   ))
 }
 diag_lines_chr <- c(diag_lines_chr, "",
   "## Notes",
   "",
   "- Headline scenario combines: (A) DC-access workers using row-level PARTICIPATING_DC, and (B) universal-account workers using the SIPP-observed conditional DC rate as a uniform participation assumption.",
-  "- Sensitivities apply the rate uniformly across the whole universe."
+  "- Sensitivities apply the rate uniformly across the whole universe.",
+  sprintf("- Seed cost is a flat $%d automatic contribution to every eligible worker, paid regardless of participation, so it is constant across behavioral scenarios and reaches the full eligible population (seed recipients = eligible count). It does not count toward the $1,000 match cap.",
+          round(policy_params$auto_seed_amount_num, 0L))
 )
 writeLines(diag_lines_chr, diag_path_chr)
 

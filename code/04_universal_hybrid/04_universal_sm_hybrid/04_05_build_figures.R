@@ -6,10 +6,13 @@
 #                     across income deciles?
 #
 # DESCRIPTION:
-# Build three figures using EIG style tokens (loaded the same way as 04a):
-#   1. match_rate_by_magi.png      -- hybrid schedule by filing group + current-law overlay
-#   2. incidence_by_decile.png     -- share of match dollars by MAGI decile
-#   3. universe_funnel.png         -- weighted N at each universe filter step
+# Build the hybrid figures using EIG style tokens (loaded the same way as 04a):
+#   1. match_rate_by_magi.png        -- hybrid schedule by filing group + current-law overlay
+#   2. incidence_by_decile.png       -- share of match dollars by MAGI decile
+#   3. universe_funnel.png           -- weighted N at each universe filter step
+#   4. universe_magi_distribution.png -- weighted MAGI distribution (diagnostic)
+#   5. incidence_seed_vs_match.png   -- federal dollars by decile: match vs. $100 seed
+#   6. seed_variant_schedules.png    -- seed amount by MAGI: flat vs. phased variants
 #
 # Inputs:
 #   data/processed/universal_sm_hybrid/pivot_table.rds
@@ -21,6 +24,9 @@
 #   output/figures/universal_sm_hybrid/match_rate_by_magi.png
 #   output/figures/universal_sm_hybrid/incidence_by_decile.png
 #   output/figures/universal_sm_hybrid/universe_funnel.png
+#   output/figures/universal_sm_hybrid/universe_magi_distribution.png
+#   output/figures/universal_sm_hybrid/incidence_seed_vs_match.png
+#   output/figures/universal_sm_hybrid/seed_variant_schedules.png
 
 rm(list = ls())
 options(scipen = 999)
@@ -85,6 +91,7 @@ if (is.na(project_root)) {
 message("Using project_root: ", project_root)
 
 source(file.path(project_root, "code", "_shared", "calibration_cells.R"))
+source(file.path(project_root, "code", "_shared", "params.R"))
 
 ###################################################################################
 ###                         Configuration and Paths                             ###
@@ -116,6 +123,8 @@ fonts_ok_lgl <- tryCatch({
 # the figures track the canonical palette if it is updated (matches 04_06's pattern).
 eig_green_700_chr <- eig_tokens_env$EIG_COLORS[["eig_green_700"]]   # #19644D
 eig_gold_600_chr  <- eig_tokens_env$EIG_COLORS[["eig_gold_600"]]    # #E1AD28
+eig_teal_900_chr  <- eig_tokens_env$EIG_COLORS[["eig_teal_900"]]
+eig_cyan_700_chr  <- eig_tokens_env$EIG_COLORS[["eig_cyan_700"]]
 
 ###################################################################################
 ###                       1) Load Pivots and Simulation                         ###
@@ -300,6 +309,180 @@ fig2_png_path_chr <- file.path(path_output_figs_chr, "incidence_by_decile.png")
 ggplot2::ggsave(fig2_png_path_chr, fig2_gg,
                 width = 8, height = 5, dpi = 300, units = "in")
 message("Wrote: ", fig2_png_path_chr)
+
+###################################################################################
+###   3b) Figure 5: Federal Dollars by Decile -- Match vs. Automatic $100 Seed  ###
+###################################################################################
+# Same full-universe deciles as Figure 2. The seed ($100 to every eligible
+# worker, paid regardless of participation) is stacked on the full-participation
+# match dollars, so each bar decomposes total federal dollars into the two
+# instruments. The seed's flat per-person structure makes it relatively most
+# important exactly where match dollars are smallest.
+seed_match_decile_tbl <- universe_inc_tbl |>
+  dplyr::group_by(magi_decile_int) |>
+  dplyr::summarise(
+    match_dollars_B_num = sum(match_dollars_zerofill_num * WPFINWGT, na.rm = TRUE) / 1e9,
+    seed_dollars_B_num  = sum(seed_per_worker_num * WPFINWGT, na.rm = TRUE) / 1e9,
+    .groups = "drop"
+  )
+
+seed_match_csv_path_chr <- file.path(path_output_fig_data_chr,
+                                     "universal_sm_hybrid_incidence_seed_vs_match.csv")
+write_csv(seed_match_decile_tbl, seed_match_csv_path_chr)
+
+seed_match_long_tbl <- seed_match_decile_tbl |>
+  tidyr::pivot_longer(cols = c(match_dollars_B_num, seed_dollars_B_num),
+                      names_to = "component_chr", values_to = "dollars_B_num") |>
+  dplyr::mutate(
+    component_lbl_chr = factor(
+      dplyr::if_else(component_chr == "match_dollars_B_num",
+                     "Match dollars", "Automatic $100 seed"),
+      # Stack order: seed on top of match.
+      levels = c("Automatic $100 seed", "Match dollars")
+    )
+  )
+
+fig5_gg <- ggplot2::ggplot(seed_match_long_tbl,
+                           ggplot2::aes(x = factor(magi_decile_int),
+                                        y = dollars_B_num,
+                                        fill = component_lbl_chr)) +
+  ggplot2::geom_col(position = "stack") +
+  ggplot2::scale_fill_manual(values = c("Match dollars"       = eig_green_700_chr,
+                                        "Automatic $100 seed" = eig_gold_600_chr)) +
+  ggplot2::scale_y_continuous(labels = scales::dollar_format(suffix = "B", accuracy = 0.5)) +
+  ggplot2::labs(
+    x = "Income decile across the full workforce (1 = lowest, 10 = highest)",
+    y = "Federal dollars (billions, TY2027)",
+    fill = NULL,
+    title = "Figure 5. Federal dollars by income decile: match vs. automatic $100 seed",
+    subtitle = "Full-participation match dollars plus a $100 automatic contribution to every eligible worker, contributing or not",
+    caption = "Source: Author's analysis of SIPP 2024 Wave 1."
+  ) +
+  ggplot2::theme_minimal(base_size = 11) +
+  ggplot2::theme(
+    legend.position    = "bottom",
+    panel.grid.minor   = ggplot2::element_blank(),
+    panel.grid.major.x = ggplot2::element_blank(),
+    plot.title         = ggplot2::element_text(face = "bold"),
+    plot.subtitle      = ggplot2::element_text(size = 9, color = "#444444")
+  )
+
+fig5_png_path_chr <- file.path(path_output_figs_chr, "incidence_seed_vs_match.png")
+ggplot2::ggsave(fig5_png_path_chr, fig5_gg,
+                width = 8, height = 5, dpi = 300, units = "in")
+message("Wrote: ", fig5_png_path_chr)
+
+###################################################################################
+###     3c) Figure 6: Seed Amount by MAGI -- Flat vs. Phased Variants           ###
+###################################################################################
+# Single-filer geometry of the four seed designs (see 04_03 Section 4b / params.R).
+# The flat design has a cliff at the endpoint; the three phased variants remove
+# it in different ways.
+seed_amount_num     <- sm_params()$auto_seed_amount
+seed_ext_mult_num   <- sm_params()$seed_extended_endpoint_mult
+single_pivot_num    <- sm_pivot_2024_num[["single_mfs"]]
+single_endpoint_num <- endpoint_factor_num * single_pivot_num
+seed_grid_num       <- seq(0, ceiling(seed_ext_mult_num * single_endpoint_num / 1000) * 1000,
+                           by = 250)
+
+seed_variant_lines_tbl <- dplyr::bind_rows(
+  data.frame(
+    variant_chr = "Flat $100 (headline)",
+    magi_num    = seed_grid_num,
+    seed_num    = ifelse(seed_grid_num < single_endpoint_num, seed_amount_num, 0)
+  ),
+  data.frame(
+    variant_chr = "Pro-rata with match rate",
+    magi_num    = seed_grid_num,
+    seed_num    = seed_amount_num *
+      compute_match_rate(
+        magi_num          = seed_grid_num,
+        filing_group_chr  = rep("single_mfs", length(seed_grid_num)),
+        pivot_table       = sm_pivot_2024_num,
+        max_rate_pp_num   = max_rate_pp_num,
+        pivot_rate_pp_num = pivot_rate_pp_num
+      ) / max_rate_pp_num
+  ),
+  data.frame(
+    variant_chr = "Flat, then taper",
+    magi_num    = seed_grid_num,
+    seed_num    = ifelse(
+      seed_grid_num <= single_pivot_num, seed_amount_num,
+      pmax(0, seed_amount_num * (single_endpoint_num - seed_grid_num) /
+                (single_endpoint_num - single_pivot_num))
+    )
+  ),
+  data.frame(
+    variant_chr = "Extended taper",
+    magi_num    = seed_grid_num,
+    seed_num    = ifelse(
+      seed_grid_num < single_endpoint_num, seed_amount_num,
+      pmax(0, seed_amount_num * (seed_ext_mult_num * single_endpoint_num - seed_grid_num) /
+                ((seed_ext_mult_num - 1) * single_endpoint_num))
+    )
+  )
+)
+
+seed_variant_levels_chr <- c("Flat $100 (headline)", "Pro-rata with match rate",
+                             "Flat, then taper", "Extended taper")
+seed_variant_lines_tbl$variant_chr <- factor(seed_variant_lines_tbl$variant_chr,
+                                             levels = seed_variant_levels_chr)
+
+seed_variant_csv_path_chr <- file.path(path_output_fig_data_chr,
+                                       "universal_sm_hybrid_seed_variant_schedules.csv")
+write_csv(seed_variant_lines_tbl, seed_variant_csv_path_chr)
+
+seed_variant_colors_chr <- c(
+  "Flat $100 (headline)"     = eig_teal_900_chr,
+  "Pro-rata with match rate" = eig_gold_600_chr,
+  "Flat, then taper"         = eig_green_700_chr,
+  "Extended taper"           = eig_cyan_700_chr
+)
+
+# The flat design is dashed because it coincides with the extended taper across
+# the whole eligible band (and with flat-then-taper below the pivot) -- a solid
+# line would be completely hidden underneath the variants drawn after it.
+seed_variant_linetypes_chr <- c(
+  "Flat $100 (headline)"     = "dashed",
+  "Pro-rata with match rate" = "solid",
+  "Flat, then taper"         = "solid",
+  "Extended taper"           = "solid"
+)
+
+fig6_gg <- ggplot2::ggplot(seed_variant_lines_tbl,
+                           ggplot2::aes(x = magi_num, y = seed_num,
+                                        color = variant_chr, linetype = variant_chr)) +
+  ggplot2::geom_line(linewidth = 1.0) +
+  ggplot2::scale_color_manual(values = seed_variant_colors_chr) +
+  ggplot2::scale_linetype_manual(values = seed_variant_linetypes_chr) +
+  ggplot2::scale_x_continuous(labels = scales::dollar_format()) +
+  ggplot2::scale_y_continuous(labels = scales::dollar_format(),
+                              limits = c(0, seed_amount_num * 1.08)) +
+  ggplot2::labs(
+    x = "MAGI (TY2027 dollars), single filer",
+    y = "Annual seed contribution",
+    color = NULL, linetype = NULL,
+    title = "Figure 6. Seed designs compared: flat vs. phased variants",
+    subtitle = sprintf(paste0("Single filer. Pivot $%s; match endpoint $%s; the extended ",
+                              "taper reaches $0 at %.2f x the endpoint"),
+                       formatC(round(single_pivot_num), format = "d", big.mark = ","),
+                       formatC(round(single_endpoint_num), format = "d", big.mark = ","),
+                       seed_ext_mult_num),
+    caption = "Source: Author's analysis of SIPP 2024 Wave 1."
+  ) +
+  ggplot2::theme_minimal(base_size = 11) +
+  ggplot2::theme(
+    legend.position    = "bottom",
+    panel.grid.minor   = ggplot2::element_blank(),
+    panel.grid.major.x = ggplot2::element_blank(),
+    plot.title         = ggplot2::element_text(face = "bold"),
+    plot.subtitle      = ggplot2::element_text(size = 9, color = "#444444")
+  )
+
+fig6_png_path_chr <- file.path(path_output_figs_chr, "seed_variant_schedules.png")
+ggplot2::ggsave(fig6_png_path_chr, fig6_gg,
+                width = 8, height = 5, dpi = 300, units = "in")
+message("Wrote: ", fig6_png_path_chr)
 
 ###################################################################################
 ###                  4) Figure 3: Universe Funnel                               ###
