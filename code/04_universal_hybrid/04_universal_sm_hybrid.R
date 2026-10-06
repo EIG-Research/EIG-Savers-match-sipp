@@ -12,7 +12,7 @@
 #
 # Sub-scripts (each independently runnable for development):
 #   04_01_build_universe.R       -- universe + funnel
-#   04_02_compute_pivots.R       -- median MAGI -> pivot table
+#   04_02_compute_endpoints.R       -- median MAGI -> pivot table
 #   04_03_simulate_match.R       -- match rate schedule + scenarios
 #   04_04_build_tables.R         -- xlsx outputs
 #   04_05_build_figures.R        -- ggplot figures via EIG tokens
@@ -79,7 +79,7 @@ sub_dir_chr <- file.path(project_root, "code", "04_universal_hybrid",
 
 sub_scripts_chr <- c(
   file.path(sub_dir_chr, "04_01_build_universe.R"),
-  file.path(sub_dir_chr, "04_02_compute_pivots.R"),
+  file.path(sub_dir_chr, "04_02_compute_endpoints.R"),
   file.path(sub_dir_chr, "04_03_simulate_match.R"),
   file.path(sub_dir_chr, "04_04_build_tables.R"),
   file.path(sub_dir_chr, "04_05_build_figures.R"),

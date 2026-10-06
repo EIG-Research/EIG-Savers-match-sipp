@@ -113,14 +113,33 @@ message("Using project_root: ", path_project)
 ###########################################
 ###        Input and output paths        ###
 ###########################################
-sipp_dta_path_chr       <- file.path(path_data_raw, "pu2024.dta")
-output_csv_path_chr     <- file.path(path_data_raw, "pu2024_expanded.csv")
-output_parquet_path_chr <- file.path(path_data_raw, "pu2024_expanded.parquet")
+# SIPP COLLECTION YEAR -- the single place the vintage is set. Every path below is
+# derived from it, so a vintage change is a one-line edit and cannot half-apply.
+#
+# A SIPP collection-year file reports the calendar year BEFORE its label: the 2025
+# file covers reference period January-December 2024. `sipp_reference_year_int` is
+# the income year and is what must match the CPS ASEC income year used to set the
+# designated endpoint (see 01d_asec_income_medians.R, which asserts the pairing).
+#
+# Each collection-year file also POOLS FOUR PANELS (the 2025 file carries SPANEL
+# 2022/2023/2024/2025 at SWAVE 4/3/2/1) and WPFINWGT is calibrated so the POOLED
+# file represents the national population. Do not filter to one panel or wave --
+# doing so would cut the analysis universe from ~145M to ~28M.
+sipp_collection_year_chr <- "2025"
+sipp_reference_year_int  <- as.integer(sipp_collection_year_chr) - 1L
+
+sipp_dta_path_chr       <- file.path(path_data_raw, sprintf("pu%s.dta", sipp_collection_year_chr))
+output_csv_path_chr     <- file.path(path_data_raw, sprintf("pu%s_expanded.csv", sipp_collection_year_chr))
+output_parquet_path_chr <- file.path(path_data_raw, sprintf("pu%s_expanded.parquet", sipp_collection_year_chr))
+
+message(sprintf("SIPP vintage: %s collection year (income reference year %d).",
+                sipp_collection_year_chr, sipp_reference_year_int))
 
 if (!file.exists(sipp_dta_path_chr)) {
   stop(
-    "SIPP 2024 Stata file not found at: ", sipp_dta_path_chr, ". ",
-    "Unzip data/raw/pu2024_dta.zip or re-download pu2024.dta from Census.",
+    "SIPP Stata file not found at: ", sipp_dta_path_chr, ". ",
+    sprintf("Download pu%s_dta.zip from https://www2.census.gov/programs-surveys/sipp/data/datasets/%s/ and unzip into data/raw/.",
+            sipp_collection_year_chr, sipp_collection_year_chr),
     call. = FALSE
   )
 }
@@ -202,9 +221,9 @@ available_vars_chr <- names(sipp_header_df)
 missing_vars_chr <- setdiff(target_vars_chr, available_vars_chr)
 if (length(missing_vars_chr) > 0L) {
   stop(
-    "The following target variables are not present in pu2024.dta: ",
+    "The following target variables are not present in ", basename(sipp_dta_path_chr), ": ",
     paste(missing_vars_chr, collapse = ", "),
-    ". Consult the SIPP 2024 Wave 1 Data Dictionary for the correct names ",
+    ". Consult the SIPP ", sipp_collection_year_chr, " Data Dictionary for the correct names ",
     "(e.g. the Census PUF codebook).",
     call. = FALSE
   )
@@ -221,7 +240,7 @@ message(
 # the 45 target columns keeps memory well below the full-file footprint.
 
 message(
-  "Reading ", length(target_vars_chr), " columns from pu2024.dta. ",
+  "Reading ", length(target_vars_chr), " columns from ", basename(sipp_dta_path_chr), ". ",
   "This typically takes 1-3 minutes on a laptop."
 )
 
@@ -256,7 +275,9 @@ sipp_full_df <- sipp_full_df[, target_vars_chr]
 #   Infrastructure/references/literature/data_dictionaries/2024_SIPP_Data_Dictionary.pdf
 # Universe descriptions are reproduced from that codebook.
 
-manifest_path_chr <- file.path(path_data_raw, "pu2024_expanded_variable_manifest.csv")
+manifest_path_chr <- file.path(path_data_raw,
+                               sprintf("pu%s_expanded_variable_manifest.csv",
+                                       sipp_collection_year_chr))
 
 manifest_df <- data.frame(
   variable_chr = c(

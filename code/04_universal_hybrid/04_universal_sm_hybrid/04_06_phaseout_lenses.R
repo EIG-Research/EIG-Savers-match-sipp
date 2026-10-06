@@ -16,10 +16,10 @@
 # All three lenses are deterministic functions of the schedule in
 # code/_shared/calibration_cells.R (compute_match_rate()). The script does not
 # touch the SIPP universe; it operates on a fine MAGI grid for a Single
-# filer using the pivot table emitted by 04_02_compute_pivots.R.
+# filer using the endpoint table emitted by 04_02_compute_endpoints.R.
 #
 # Inputs:
-#   data/processed/universal_sm_hybrid/pivot_table.rds
+#   data/processed/universal_sm_hybrid/endpoint_table.rds
 #   Infrastructure/style/themes/r/eig_tokens.R
 #   Infrastructure/style/themes/r/eig_theme.R
 #   code/_shared/calibration_cells.R  (for compute_match_rate)
@@ -108,7 +108,7 @@ for (p in c(path_data_processed_chr, path_output_figs_chr,
   if (!dir.exists(p)) dir.create(p, recursive = TRUE)
 }
 
-# Single-filer focus and schedule parameters fed in from the pivot artifact.
+# Single-filer focus and schedule parameters fed in from the endpoint artifact.
 filing_group_focus_chr <- "single_mfs"
 filing_group_label_chr <- "Single / MFS"
 default_contrib_rate_num <- 0.03   # The 04 auto-enrollment default
@@ -128,10 +128,10 @@ cur_credit_cap_num  <- cur_rate_max_num * cur_contrib_cap_num              # 1,0
 
 # Income grid covers the entire eligibility band plus a margin past the endpoint
 # so the figures show where the policy has bite and where it does not. Under the
-# 75%@two-thirds-median IRS-anchored design the Single endpoint is (4/3) x pivot =
-# 1.067 x the IRS Single median (~$43K), so the grid runs well past that.
+# designated-endpoint design the Single endpoint is the median total personal income
+# of single filers age 15+ (~$44K), so the grid runs well past that.
 grid_min_num  <- 1000L              # avoid divide-by-zero in share-of-earnings
-grid_max_num  <- 80000L             # well past the Single endpoint ((4/3) x pivot)
+grid_max_num  <- 80000L             # well past the Single designated endpoint
 grid_step_num <- 100L               # smooth curves
 
 # Parameter assertions guard against silently wrong outputs.
@@ -175,58 +175,59 @@ color_curlaw_chr      <- color_default_chr
 color_default_ref_chr <- color_reference_chr
 
 ###################################################################################
-###                       1) Load Pivot and Set Anchors                         ###
+###                    1) Load Endpoints and Set Label Points                   ###
 ###################################################################################
-pivot_obj_list    <- readRDS(file.path(path_data_processed_chr, "pivot_table.rds"))
-sm_pivot_2024_num <- pivot_obj_list$pivot_vec_num
-stopifnot(filing_group_focus_chr %in% names(sm_pivot_2024_num))
+endpoint_obj_list    <- readRDS(file.path(path_data_processed_chr, "endpoint_table.rds"))
+endpoint_vec_num <- endpoint_obj_list$endpoint_vec_num
+stopifnot(filing_group_focus_chr %in% names(endpoint_vec_num))
 
-# Schedule parameters the pivots were derived under (set in 04_02; same guard
+# Schedule parameters the endpoints were derived under (set in 04_02; same guard
 # as 04_03/04_05). Passed through to every compute_match_rate() call below so
-# the lens grid is evaluated on the same line that produced the pivots.
-schedule_params_list <- pivot_obj_list$schedule_params_list
+# the lens grid is evaluated on the same line that produced the endpoints.
+schedule_params_list <- endpoint_obj_list$schedule_params_list
 if (is.null(schedule_params_list) ||
     is.null(schedule_params_list$max_rate_pp_num) ||
-    is.null(schedule_params_list$pivot_rate_pp_num)) {
-  stop("pivot_table.rds has no schedule_params_list (pre-parameterization vintage). ",
-       "Rerun 04_02_compute_pivots.R to regenerate it.", call. = FALSE)
+    is.null(schedule_params_list$designated_endpoint_num)) {
+  stop("endpoint_table.rds has no schedule_params_list (pre-parameterization vintage). ",
+       "Rerun 04_02_compute_endpoints.R to regenerate it.", call. = FALSE)
 }
 
-pivot_single_num   <- sm_pivot_2024_num[[filing_group_focus_chr]]
-stopifnot(pivot_single_num > 0)
+endpoint_single_num <- endpoint_vec_num[[filing_group_focus_chr]]
+stopifnot(endpoint_single_num > 0)
 
 # Derive the schedule shape directly from compute_match_rate() rather than
-# re-hardcoding the floor/slope/endpoint here. This is the single source of
-# truth: if calibration_cells.R::compute_match_rate() changes, these values
-# track it automatically (the 2026-06-08 redesign from a 300%/-250 schedule to
-# the 200%-floor single straight line motivated this hardening).
-#   floor  = rate at MAGI 0          (200 under the current schedule)
-#   slope  = (rate@pivot - floor) / pivot   (-150/pivot; rate@pivot is 50)
-#   endpoint = MAGI where the line hits 0  = pivot - rate@pivot/slope = (4/3)*pivot
+# re-hardcoding the max rate and slope here. This is the single source of truth:
+# if calibration_cells.R::compute_match_rate() changes, these values track it
+# automatically. Under the endpoint parameterization (2026-08-04) the shape is
+# fully determined by two evaluations:
+#   max rate = rate at income 0                    (200 under the current design)
+#   slope    = -max_rate / endpoint                (pp per dollar)
 eval_rate_fn <- function(magi_num) {
   compute_match_rate(
     magi_num          = magi_num,
     filing_group_chr  = rep(filing_group_focus_chr, length(magi_num)),
-    pivot_table       = sm_pivot_2024_num,
-    max_rate_pp_num   = schedule_params_list$max_rate_pp_num,
-    pivot_rate_pp_num = schedule_params_list$pivot_rate_pp_num
+    endpoint_table    = endpoint_vec_num,
+    max_rate_pp_num   = schedule_params_list$max_rate_pp_num
   )
 }
 floor_pp_num            <- eval_rate_fn(0)
-rate_at_pivot_pp_num    <- eval_rate_fn(pivot_single_num)
-slope_pp_per_dollar_num <- (rate_at_pivot_pp_num - floor_pp_num) / pivot_single_num
-endpoint_single_num     <- pivot_single_num - rate_at_pivot_pp_num / slope_pp_per_dollar_num
-stopifnot(floor_pp_num > 0, slope_pp_per_dollar_num < 0, endpoint_single_num > pivot_single_num)
+slope_pp_per_dollar_num <- -floor_pp_num / endpoint_single_num
+stopifnot(
+  floor_pp_num > 0,
+  slope_pp_per_dollar_num < 0,
+  # The line must actually reach zero AT the endpoint, not before or after.
+  abs(eval_rate_fn(endpoint_single_num)) < 1e-6
+)
 
 # Invert the (single straight-line) schedule: solve floor + slope * M = R for M.
 #   M = (R - floor) / slope
-# Used to locate anchor points where the schedule equals a given rate. Replaces
-# the old closed form M = pivot * (300 - R) / 250, which was tied to the 300%
+# Used to locate label points where the schedule equals a given rate. Replaces
+# the old closed form tied to the retired 300% schedule
 # schedule. Note: under the 200% floor, rate = 200 only at M = 0, so the only
-# interior cap-relevant anchor is rate = 100% (at M = (2/3) * pivot).
+# interior cap-relevant label is rate = 100% (at M = 0.5 * endpoint).
 magi_at_rate_fn_chr <- "M = (R - floor) / slope"
 magi_at_rate <- function(R) (R - floor_pp_num) / slope_pp_per_dollar_num
-magi_at_rate_100_num <- magi_at_rate(100)   # rate = 100% (= (2/3) * pivot under 200% floor)
+magi_at_rate_100_num <- magi_at_rate(100)   # rate = 100% (= 0.5 * endpoint)
 
 ###################################################################################
 ###                       2) Build the Single-Filer Lens Grid                   ###
@@ -292,18 +293,19 @@ message("Wrote: ", lens_rds_path_chr)
 ###################################################################################
 ###                  4) Compute Anchor Values for Direct Labeling               ###
 ###################################################################################
-# Anchor MAGI levels at which each figure carries a direct on-chart label.
-# Computed off the same schedule the figure curves draw from (via magi_at_rate),
-# so they track any change to compute_match_rate(). Under the 200% floor, rate =
-# 200% occurs only at M = 0, so the interior anchors are rate = 100% and the
-# pivot (50%); the endpoint (0%) closes the band.
+# Income levels at which each figure carries a direct on-chart label. Computed off
+# the same schedule the figure curves draw from (via magi_at_rate), so they track
+# any change to compute_match_rate(). Under the endpoint parameterization the max
+# rate occurs only at income 0, so the interior labels are the 100% and 50% rate
+# crossings (at half and three-quarters of the endpoint), and the endpoint closes
+# the band at 0%.
 anchor_levels_num <- c(
-  0,                                    # rate = floor (200% under current schedule)
-  magi_at_rate_100_num,                 # rate = 100% (= (2/3) * pivot under 200% floor)
-  pivot_single_num,                     # rate = 50%  (pivot)
-  endpoint_single_num                   # rate = 0%   (endpoint = (4/3) * pivot)
+  0,                                    # rate = max rate (200%)
+  magi_at_rate_100_num,                 # rate = 100% (= 0.5 * endpoint)
+  magi_at_rate(50),                     # rate = 50%  (= 0.75 * endpoint)
+  endpoint_single_num                   # rate = 0%   (the designated endpoint)
 )
-anchor_label_chr <- c("$0 MAGI", "Rate = 100%", "Pivot", "Endpoint")
+anchor_label_chr <- c("$0 income", "Rate = 100%", "Rate = 50%", "Designated endpoint")
 
 anchor_rate_pp_num <- eval_rate_fn(anchor_levels_num)
 anchor_rate_frac_num <- anchor_rate_pp_num / 100
@@ -415,13 +417,13 @@ fig1_curlaw_tbl <- dplyr::tibble(magi_num = seq(0, cur_high_num, by = 250)) |>
                                            (cur_high_num - cur_low_num)))
   )
 
-# The design anchor: 75% at two-thirds the IRS Single median MAGI. With the 200%
-# floor this is the point magi_at_rate(75) = (5/6) * pivot, which equals 2/3 the
-# IRS Single median by construction (pivot = 0.8 x median). Headline callout.
+# Reference callout at the 75% rate point (0.625 x the designated endpoint). The
+# floor this is the point magi_at_rate(75) = 0.625 * endpoint, referenced only as a
+# median total personal income of single filers by construction. Headline callout.
 anchor75_magi_num    <- magi_at_rate(75)
 anchor75_rate_pp_num <- 75
 
-# Dots at $0, the 75%-at-two-thirds-median design anchor, and the endpoint. The
+# Dots at $0, the 75% rate point, and the designated endpoint. The
 # endpoint keeps its dot but carries NO text label -- the line visibly collapses
 # to 0 there.
 fig1_points_tbl <- dplyr::tibble(
@@ -429,7 +431,7 @@ fig1_points_tbl <- dplyr::tibble(
   match_rate_pp_num = c(floor_pp_num, anchor75_rate_pp_num, 0)
 )
 
-# Text callouts on the $0 floor and the 75% design anchor:
+# Text callouts on the $0 maximum rate and the 75% rate point:
 #   - "200% match at zero MAGI" sits just below and to the right of the line.
 #   - "75% match at two-thirds the Single median MAGI" sits directly above the dot.
 # Nudges are a first pass; tuned on the render-inspect loop.
@@ -437,13 +439,13 @@ fig1_labels_tbl <- dplyr::tibble(
   magi_num          = c(0, anchor75_magi_num),
   match_rate_pp_num = c(floor_pp_num, anchor75_rate_pp_num),
   label_full_chr    = c(paste0(round(floor_pp_num), "% match\nat zero MAGI"),
-                        "75% match at\ntwo-thirds the Single median MAGI"),
+                        "75% match at\n0.625 x the designated endpoint"),
   nudge_x_num       = c(4000, 0),
   nudge_y_num       = c(-28, 22),
   hjust_num         = c(0, 0.5)
 )
 
-# Single vertical reference at the 75% design anchor; the endpoint is marked by
+# Single vertical reference at the 75% rate point; the endpoint is marked by
 # its dot on the zero baseline, so no second guide is needed.
 fig1_refs_tbl <- dplyr::tibble(
   x_num     = anchor75_magi_num,
@@ -516,7 +518,7 @@ fig1_gg <- ggplot2::ggplot(fig1_line_tbl, ggplot2::aes(x = magi_num, y = match_r
                       " filer, TY2027 dollars"),
     x        = "Modified adjusted gross income (MAGI)",
     y        = "Federal match rate",
-    caption  = "Source: Author's calculation. Pivot anchored to the IRS all-single-filer median AGI (SOI Table 1.2); 75% rate at two-thirds the median."
+    caption  = "Source: Author's calculation. Designated endpoint = median total personal income of single filers age 15+, CPS ASEC."
   ) +
   eig_tufte_theme
 
@@ -546,7 +548,7 @@ fig2_data_tbl <- lens_tbl |>
 # full $1,000 match. The boundary is found from cap_binds_at_default_flag.
 # The default-suffices band can be empty under the 200% floor: the 3% default
 # reaches the $1,000 cap only where rate_frac * 0.03 * MAGI >= 1000, whose peak
-# over MAGI equals 0.02 * pivot, so the band is non-empty iff the Single pivot is
+# over income equals 0.02 * endpoint, so the band is non-empty iff the Single endpoint is
 # at least ~$50,000. Guard against an empty band so the geom_rect / annotations
 # degrade gracefully instead of erroring on Inf/-Inf summaries.
 default_band_rows_tbl <- lens_tbl |>
@@ -563,25 +565,25 @@ default_band_tbl <- if (band_exists_lgl) {
 }
 if (!band_exists_lgl) {
   warning("No MAGI level lets the 3% default contribution reach the $1,000 cap ",
-          "(requires Single pivot >= ~$50,000 under the 200% floor; current pivot $",
-          formatC(round(pivot_single_num), format = "d", big.mark = ","),
+          "(requires a Single endpoint >= ~$67,000; current endpoint $",
+          formatC(round(endpoint_single_num), format = "d", big.mark = ","),
           "). Band shading and band annotations are omitted from Figures 2 and 3.",
           call. = FALSE)
 }
 
 # Two anchor callouts on the Expanded Policy curve: the $500 entry at $0 and the
-# $2,000 contribution at the pivot. (The $20,205 point is dropped to make room
+# $2,000 contribution at the 50% rate point. (The $20,205 point is dropped to make room
 # for the current-law contrast and the end-of-range marker.)
 fig2_anchors_tbl <- anchor_tbl |>
-  dplyr::filter(anchor_label_chr %in% c("$0 MAGI", "Pivot")) |>
+  dplyr::filter(anchor_label_chr %in% c("$0 income", "Rate = 50%")) |>
   dplyr::mutate(
     label_full_chr = dplyr::case_when(
-      anchor_label_chr == "$0 MAGI" ~ paste0("$",
+      anchor_label_chr == "$0 income" ~ paste0("$",
                                              formatC(round(required_contribution_num), format = "d", big.mark = ","),
                                              " unlocks the cap\nat zero MAGI"),
-      anchor_label_chr == "Pivot"   ~ paste0("$",
+      anchor_label_chr == "Rate = 50%" ~ paste0("$",
                                              formatC(round(required_contribution_num), format = "d", big.mark = ","),
-                                             " contribution\nat the pivot"),
+                                             " contribution\nat the 50% rate point"),
       TRUE                           ~ anchor_label_chr
     ),
     plot_y_num  = pmin(required_contribution_num, required_contribution_ceiling_num),
@@ -888,7 +890,7 @@ fig3_gg <- ggplot2::ggplot(fig3_data_tbl, ggplot2::aes(x = magi_num,
                       "Gold line: current-law Saver's Match (50% rate, $2,000 matchable-contribution cap), ",
                       "under which the $1,000 cap is reachable only below the $",
                       formatC(cur_low_num, format = "d", big.mark = ","),
-                      " threshold. Above the pivot the Expanded Policy required share rises rapidly; above $",
+                      " threshold. Above the 50% rate point the Expanded Policy required share rises rapidly; above $",
                       formatC(round(endpoint_single_num), format = "d", big.mark = ","),
                       " MAGI its cap is unreachable at any contribution.")
   ) +
@@ -935,7 +937,7 @@ anchors_md_chr <- c(
   "",
   "## Schedule parameters",
   "",
-  paste0("- Pivot (Single): $", formatC(round(pivot_single_num), format = "d", big.mark = ",")),
+  paste0("- Designated endpoint (Single): $", formatC(round(endpoint_single_num), format = "d", big.mark = ",")),
   paste0("- Endpoint (Single): $", formatC(round(endpoint_single_num), format = "d", big.mark = ",")),
   paste0("- Slope: ", sprintf("%.5f", slope_pp_per_dollar_num),
          " percentage points per dollar of MAGI"),

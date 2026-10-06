@@ -11,7 +11,9 @@ data/raw/pu2024.dta
    │  01_sipp_subset_from_dta.R
    ▼
 data/raw/pu2024_expanded.csv (+ .parquet, + _variable_manifest.csv)
-   │  01b_build_modeled_frame.R   (+ data/raw/irs_soi/22in01pl.xls via params, indirectly)
+   │  01b_build_modeled_frame.R   (params.R contribution_bands are literals back-calculated
+   │                               offline from data/raw/irs_soi/22in01pl.xls; the file itself
+   │                               is NOT read at runtime)
    ▼
 data/processed/sipp_modeled.parquet (+ .rds)   ← THE canonical frame; + data/processed/params.json
    ├─► 02a_eligibility_buckets.R ─► eligibility bucket tables + report
@@ -19,6 +21,9 @@ data/processed/sipp_modeled.parquet (+ .rds)   ← THE canonical frame; + data/p
    ├─► 03a_jct_replication.R ─► sm_jct_replication_scenarios.xlsx ─► 05a figures
    ├─► 03b_robustness_sweep.R ─► sm_robustness_scenarios.xlsx + snapshot json
    └─► 04_universal_hybrid (04_01 reads frame) ─► universe_dec ─► pivots ─► sim ─► tables/figures/lenses
+            ▲
+            └── data/raw/irs_soi/23in12ms.xls enters here, at 04_02_compute_pivots.R (the ONLY
+                external file read at runtime after 01; anchors the hybrid frontier, decision D1)
 
 03c_simple_saver_illustration.R : standalone (no microdata input); reads nothing from the frame.
 ```
@@ -37,7 +42,7 @@ data/processed/sipp_modeled.parquet (+ .rds)   ← THE canonical frame; + data/p
 | **03b_robustness_sweep.R** | `sipp_modeled.parquet` | `output/tables/main/sm_robustness_scenarios.xlsx`; `output/data/intermediate_results/sm_robustness_snapshot.json` |
 | **03c_simple_saver_illustration.R** | none (self-contained; optional temp bridge snapshot, absent → skipped) | `output/tables/appendix/simple_saver_illustration.{rds,parquet}`, `..._summary.{rds,parquet}`, `simple_saver_illustration.xlsx`. **Figures gated OFF** (`WRITE_FIGURE=FALSE`) — no PNGs written. |
 | **04_01_build_universe.R** | `sipp_modeled.parquet` | `data/processed/universal_sm_hybrid/universe_dec.{rds,parquet}`; `output/reports/universal_sm_hybrid/universe_funnel.csv`, `universe_summary_stats.{csv,md}` |
-| **04_02_compute_pivots.R** | `universe_dec.parquet` | `data/processed/universal_sm_hybrid/pivot_table.{rds,parquet}`; `output/reports/universal_sm_hybrid/pivot_diagnostics.md` |
+| **04_02_compute_pivots.R** | `universe_dec.parquet`; **`data/raw/irs_soi/23in12ms.xls`** (IRS SOI Table 1.2, TY2023 — read via `readxl::read_excel()`; the single-plus-MFS median AGI anchors the pivot and endpoint per decision D1. `stop()`s if absent) | `data/processed/universal_sm_hybrid/pivot_table.{rds,parquet}`; `output/reports/universal_sm_hybrid/pivot_diagnostics.md` |
 | **04_03_simulate_match.R** | `universe_dec.parquet`, `pivot_table.rds` | `data/processed/universal_sm_hybrid/scenario_results.parquet`, `simulation_results.parquet`; `output/reports/universal_sm_hybrid/scenario_diagnostics.md` |
 | **04_04_build_tables.R** | `scenario_results.parquet`, `simulation_results.parquet`, `pivot_table.rds` | `output/tables/universal_sm_hybrid/hybrid_headline.xlsx`, `hybrid_distributional_incidence.xlsx`, `hybrid_by_route.xlsx` |
 | **04_05_build_figures.R** | `pivot_table.rds`, `simulation_results.parquet`, `universe_funnel.csv` | `output/figures/universal_sm_hybrid/match_rate_by_magi.png`, `incidence_by_decile.png`, `universe_funnel.png`, `universe_magi_distribution.png`; `output/data/figure_data/universal_sm_hybrid_{match_rate_schedule,incidence_by_decile,universe_funnel,universe_magi_distribution}.csv` |

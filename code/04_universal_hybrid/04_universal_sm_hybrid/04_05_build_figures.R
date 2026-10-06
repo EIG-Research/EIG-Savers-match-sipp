@@ -15,7 +15,7 @@
 #   6. seed_variant_schedules.png    -- seed amount by MAGI: flat vs. phased variants
 #
 # Inputs:
-#   data/processed/universal_sm_hybrid/pivot_table.rds
+#   data/processed/universal_sm_hybrid/endpoint_table.rds
 #   data/processed/universal_sm_hybrid/simulation_results.parquet
 #   output/reports/universal_sm_hybrid/universe_funnel.csv
 #   Infrastructure/style/themes/r/eig_tokens.R
@@ -127,43 +127,42 @@ eig_teal_900_chr  <- eig_tokens_env$EIG_COLORS[["eig_teal_900"]]
 eig_cyan_700_chr  <- eig_tokens_env$EIG_COLORS[["eig_cyan_700"]]
 
 ###################################################################################
-###                       1) Load Pivots and Simulation                         ###
+###                      1) Load Endpoints and Simulation                       ###
 ###################################################################################
-pivot_obj_list    <- readRDS(file.path(path_data_processed_chr, "pivot_table.rds"))
-sm_pivot_2024_num <- pivot_obj_list$pivot_vec_num
+endpoint_obj_list    <- readRDS(file.path(path_data_processed_chr, "endpoint_table.rds"))
+endpoint_vec_num <- endpoint_obj_list$endpoint_vec_num
 simulation_tbl    <- read_parquet(file.path(path_data_processed_chr, "simulation_results.parquet"))
 
-# Schedule parameters the pivots were derived under (set in 04_02; see
+# Schedule parameters the endpoints were derived under (set in 04_02; see
 # 04_03 for the same guard). The figures draw the schedule and its endpoints
 # from these so they track any change to the max match rate automatically.
-schedule_params_list <- pivot_obj_list$schedule_params_list
+schedule_params_list <- endpoint_obj_list$schedule_params_list
 if (is.null(schedule_params_list) ||
     is.null(schedule_params_list$max_rate_pp_num) ||
-    is.null(schedule_params_list$pivot_rate_pp_num)) {
-  stop("pivot_table.rds has no schedule_params_list (pre-parameterization vintage). ",
-       "Rerun 04_02_compute_pivots.R to regenerate it.", call. = FALSE)
+    is.null(schedule_params_list$designated_endpoint_num)) {
+  stop("endpoint_table.rds has no schedule_params_list (pre-parameterization vintage). ",
+       "Rerun 04_02_compute_endpoints.R to regenerate it.", call. = FALSE)
 }
 max_rate_pp_num     <- schedule_params_list$max_rate_pp_num
-pivot_rate_pp_num   <- schedule_params_list$pivot_rate_pp_num
-# Endpoint multiple of the pivot: R_max / (R_max - R_p); 4/3 at the defaults.
-endpoint_factor_num <- max_rate_pp_num / (max_rate_pp_num - pivot_rate_pp_num)
+designated_endpoint_num <- schedule_params_list$designated_endpoint_num
+# endpoint_vec_num carries endpoints directly, so no conversion is needed.
+endpoint_factor_num <- 1  # endpoint_vec_num already carries endpoints; kept as 1 so downstream arithmetic is unchanged
 
 ###################################################################################
 ###             2) Figure 1: Match-Rate-by-MAGI Schedule                        ###
 ###################################################################################
 # Grid runs to $90K -- just past the widest phase-down (MFJ endpoint ~$86K
-# under the 75%@two-thirds-median IRS-anchored design), so the x-axis ends where
+# under the designated-endpoint design), so the x-axis ends where
 # the match rate has reached 0 for every filing group without trailing dead space.
 magi_grid_num <- seq(0, 90000, by = 500)
 
 schedule_rows_list <- list()
-for (g in names(sm_pivot_2024_num)) {
+for (g in names(endpoint_vec_num)) {
   hybrid_rate_pp_num <- compute_match_rate(
     magi_num          = magi_grid_num,
     filing_group_chr  = rep(g, length(magi_grid_num)),
-    pivot_table       = sm_pivot_2024_num,
-    max_rate_pp_num   = max_rate_pp_num,
-    pivot_rate_pp_num = pivot_rate_pp_num
+    endpoint_table       = endpoint_vec_num,
+    max_rate_pp_num   = max_rate_pp_num
   )
   schedule_rows_list[[g]] <- data.frame(
     filing_group_chr  = g,
@@ -181,7 +180,7 @@ sm_lower_num <- sm_constants$sm_lower
 sm_upper_num <- sm_constants$sm_upper
 
 filing_to_constant_chr <- c(single_mfs = "Single", mfj = "MFJ", hoh = "HoH")
-for (g in names(sm_pivot_2024_num)) {
+for (g in names(endpoint_vec_num)) {
   key_chr  <- filing_to_constant_chr[g]
   low_num  <- sm_lower_num[[key_chr]]
   high_num <- sm_upper_num[[key_chr]]
@@ -232,15 +231,16 @@ fig1_gg <- ggplot2::ggplot(schedule_tbl, ggplot2::aes(
   ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"),
                                breaks = seq(0, max_rate_pp_num, by = 50)) +
   ggplot2::labs(
-    x = "MAGI (TY2027 dollars)",
+    x = "Income (nominal dollars)",
     y = "Match rate (%)",
     color = NULL, linetype = NULL,
-    title = "Figure 1. Match rate by MAGI: Expanded Policy vs. current Saver's Match",
-    subtitle = sprintf(paste0("Expanded Policy: a single straight line per filing group — %d%% at $0 MAGI, ",
-                              "declining to 0%% at %.2f × pivot; Single rate is %d%% at two-thirds the IRS single-filer median"),
-                       round(max_rate_pp_num, 0L), endpoint_factor_num,
-                       round(schedule_params_list$anchor_rate_pp_num, 0L)),
-    caption = "Source: Author's analysis of SIPP 2024 Wave 1."
+    title = "Figure 1. Match rate by income: Expanded Policy vs. current Saver's Match",
+    subtitle = sprintf(paste0("Expanded Policy: one straight line per filing group — %d%% match at $0, ",
+                              "declining to 0%% at the designated endpoint ($%s for a single filer)"),
+                       round(max_rate_pp_num, 0L),
+                       formatC(round(schedule_params_list$designated_endpoint_num),
+                               format = "d", big.mark = ",")),
+    caption = "Source: Author's analysis of SIPP and CPS ASEC."
   ) +
   ggplot2::theme_minimal(base_size = 11) +
   ggplot2::theme(
@@ -380,8 +380,10 @@ message("Wrote: ", fig5_png_path_chr)
 # it in different ways.
 seed_amount_num     <- sm_params()$auto_seed_amount
 seed_ext_mult_num   <- sm_params()$seed_extended_endpoint_mult
-single_pivot_num    <- sm_pivot_2024_num[["single_mfs"]]
-single_endpoint_num <- endpoint_factor_num * single_pivot_num
+single_endpoint_num  <- endpoint_vec_num[["single_mfs"]]
+# Plateau income for the flat_then_taper seed variant: a SEED parameter expressed
+# as a fraction of the designated endpoint (params.R). Not a schedule concept.
+single_plateau_num   <- sm_params()$seed_plateau_frac_of_endpoint * single_endpoint_num
 seed_grid_num       <- seq(0, ceiling(seed_ext_mult_num * single_endpoint_num / 1000) * 1000,
                            by = 250)
 
@@ -398,18 +400,17 @@ seed_variant_lines_tbl <- dplyr::bind_rows(
       compute_match_rate(
         magi_num          = seed_grid_num,
         filing_group_chr  = rep("single_mfs", length(seed_grid_num)),
-        pivot_table       = sm_pivot_2024_num,
-        max_rate_pp_num   = max_rate_pp_num,
-        pivot_rate_pp_num = pivot_rate_pp_num
+        endpoint_table       = endpoint_vec_num,
+        max_rate_pp_num   = max_rate_pp_num
       ) / max_rate_pp_num
   ),
   data.frame(
     variant_chr = "Flat, then taper",
     magi_num    = seed_grid_num,
     seed_num    = ifelse(
-      seed_grid_num <= single_pivot_num, seed_amount_num,
+      seed_grid_num <= single_plateau_num, seed_amount_num,
       pmax(0, seed_amount_num * (single_endpoint_num - seed_grid_num) /
-                (single_endpoint_num - single_pivot_num))
+                (single_endpoint_num - single_plateau_num))
     )
   ),
   data.frame(
@@ -440,7 +441,7 @@ seed_variant_colors_chr <- c(
 )
 
 # The flat design is dashed because it coincides with the extended taper across
-# the whole eligible band (and with flat-then-taper below the pivot) -- a solid
+# the whole eligible band (and with flat-then-taper below the plateau) -- a solid
 # line would be completely hidden underneath the variants drawn after it.
 seed_variant_linetypes_chr <- c(
   "Flat $100 (headline)"     = "dashed",
@@ -463,9 +464,9 @@ fig6_gg <- ggplot2::ggplot(seed_variant_lines_tbl,
     y = "Annual seed contribution",
     color = NULL, linetype = NULL,
     title = "Figure 6. Seed designs compared: flat vs. phased variants",
-    subtitle = sprintf(paste0("Single filer. Pivot $%s; match endpoint $%s; the extended ",
+    subtitle = sprintf(paste0("Single filer. Seed plateau to $%s; match endpoint $%s; the extended ",
                               "taper reaches $0 at %.2f x the endpoint"),
-                       formatC(round(single_pivot_num), format = "d", big.mark = ","),
+                       formatC(round(single_plateau_num), format = "d", big.mark = ","),
                        formatC(round(single_endpoint_num), format = "d", big.mark = ","),
                        seed_ext_mult_num),
     caption = "Source: Author's analysis of SIPP 2024 Wave 1."
@@ -532,7 +533,7 @@ if (!file.exists(funnel_csv_path_chr)) {
 # each filing group's zero-match endpoint marked. Gives a distributional view of
 # the MAGI driver and shows where the eligibility band sits in the income
 # distribution. (Diagnostic figure; not embedded in the two-page brief.)
-endpoints_num  <- endpoint_factor_num * sm_pivot_2024_num  # Single/MFJ/HoH endpoints = R_max/(R_max - R_p) x pivot; (4/3) x at the defaults
+endpoints_num  <- endpoint_vec_num  # already endpoints, one per filing group
 dist_x_max_num <- 150000
 dist_tbl <- simulation_tbl |>
   dplyr::filter(!is.na(magi_num), magi_num >= 0, magi_num <= dist_x_max_num) |>

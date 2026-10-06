@@ -96,18 +96,18 @@ if (!dir.exists(path_output_tables_chr)) dir.create(path_output_tables_chr, recu
 ###################################################################################
 scenarios_path_chr  <- file.path(path_data_processed_chr, "scenario_results.parquet")
 simulation_path_chr <- file.path(path_data_processed_chr, "simulation_results.parquet")
-pivot_rds_path_chr  <- file.path(path_data_processed_chr, "pivot_table.rds")
+endpoint_rds_path_chr  <- file.path(path_data_processed_chr, "endpoint_table.rds")
 if (!file.exists(scenarios_path_chr) || !file.exists(simulation_path_chr)) {
   stop("Simulation outputs not found. Run 04_03_simulate_match.R first.", call. = FALSE)
 }
-if (!file.exists(pivot_rds_path_chr)) {
-  stop("Pivot table not found. Run 04_02_compute_pivots.R first.", call. = FALSE)
+if (!file.exists(endpoint_rds_path_chr)) {
+  stop("Endpoint table not found. Run 04_02_compute_endpoints.R first.", call. = FALSE)
 }
 
 scenarios_tbl     <- read_parquet(scenarios_path_chr)
 simulation_tbl    <- read_parquet(simulation_path_chr)
-pivot_obj_list    <- readRDS(pivot_rds_path_chr)
-sm_pivot_2024_num <- pivot_obj_list$pivot_vec_num
+endpoint_obj_list    <- readRDS(endpoint_rds_path_chr)
+endpoint_vec_num <- endpoint_obj_list$endpoint_vec_num
 max_credit_num    <- 1000  # spec Section 5.2; max credit per filer in USD
 
 # Weighted median (WPFINWGT), so the per-decile median labels match the
@@ -279,7 +279,7 @@ incidence_pooled_universe_tbl <- simulation_tbl |>
 #
 # Added 2026-05-28: per-decile contribution-rate-to-cap calculation.
 #   match_rate_at_median_pp_num = compute_match_rate(median_magi, filing_group,
-#                                                     sm_pivot_2024_num)
+#                                                     endpoint_vec_num)
 #   contrib_pct_to_hit_cap_num  = 100 * max_credit / (rate_frac * median_magi)
 # Interpretation: the share of MAGI a worker at this decile's median would
 # need to contribute to receive the full $1,000 cap. If match_rate is 0
@@ -328,7 +328,7 @@ incidence_within_filing_tbl <- simulation_tbl |>
     match_rate_at_median_pp_num = compute_match_rate(
       magi_num         = median_magi_num,
       filing_group_chr = filing_group_chr,
-      pivot_table      = sm_pivot_2024_num
+      endpoint_table      = endpoint_vec_num
     ),
     contrib_pct_to_hit_cap_num = dplyr::case_when(
       is.na(match_rate_at_median_pp_num)             ~ NA_real_,

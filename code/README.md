@@ -67,8 +67,15 @@ from 02 onward reads `data/processed/sipp_modeled.parquet`; none rebuilds the fr
 |---|---|
 | `01_sipp_subset_from_dta.R` | `data/raw/pu2024.dta` → writes `pu2024_expanded.csv` / `.parquet` |
 | `01b_build_modeled_frame.R` | `data/raw/pu2024_expanded.csv` → writes `data/processed/sipp_modeled.parquet` |
-| `02a` / `02b` / `03a` / `03b` / `04_*` | `data/processed/sipp_modeled.parquet`; `03a` also uses `data/raw/irs_soi/22in01pl.xls` |
+| `02a` / `02b` / `03a` / `03b` / `04_01` | `data/processed/sipp_modeled.parquet` |
+| `04_02_compute_pivots.R` | `universe_dec.parquet` **and `data/raw/irs_soi/23in12ms.xls`** (IRS SOI Table 1.2, TY2023 — the only SOI file read at runtime; anchors the hybrid frontier per decision D1, `stop()`s if absent) |
+| `04_03` … `04_06` | stage-04 artifacts only (`universe_dec.parquet`, `pivot_table.rds`, and downstream) |
 | `03c` | none (self-contained deterministic illustration) |
 
+`data/raw/irs_soi/22in01pl.xls` is **not** a pipeline input despite being checked in: the
+`contribution_bands` values in `_shared/params.R` were back-calculated from it offline and are hard-coded
+literals. `22in12ms.xls` is unused. See `data/raw/README.md`.
+
 The former Python port (`code/python_port/`) was retired on 2026-06-08; R is the sole implementation.
-See `data/raw/README.md` for the Census Bureau download and file placement.
+See `data/README.md` for the Census Bureau and IRS SOI downloads and file placement. (`data/raw/README.md`
+holds fuller provenance notes but is itself gitignored, so it is absent on a fresh clone.)

@@ -17,9 +17,14 @@ suppressMessages({
 # Bootstrap: paths + params + helpers + build_modeled_frame()
 source(file.path(Sys.getenv("EIG_PROJECT_ROOT", unset = getwd()), "code", "00_setup", "00_config.R"))
 
-expanded_csv <- file.path(path_data_raw, "pu2024_expanded.csv")
+# SIPP collection year must match 01_sipp_subset_from_dta.R's setting.
+sipp_collection_year_chr <- "2025"
+
+expanded_csv <- file.path(path_data_raw,
+                          sprintf("pu%s_expanded.csv", sipp_collection_year_chr))
 if (!file.exists(expanded_csv)) {
-  stop("Missing ", expanded_csv, ". Run code/01_data_preparation/01_sipp_subset_from_dta.R first.",
+  stop("Missing ", expanded_csv, ". Run code/01_data_preparation/01_sipp_subset_from_dta.R first ",
+       "(and confirm sipp_collection_year_chr matches there).",
        call. = FALSE)
 }
 

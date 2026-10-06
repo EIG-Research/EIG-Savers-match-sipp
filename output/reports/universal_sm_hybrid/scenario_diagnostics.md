@@ -1,27 +1,27 @@
 # 04 Scenario Diagnostics
 
-Computed at: 2026-07-28 14:03:23.394529
+Computed at: 2026-08-04 12:36:59.796941
 
-SIPP-observed conditional DC participation rate: 0.5897
+SIPP-observed conditional DC participation rate: 0.6193
 
 ## Scenario results
 
 | Scenario | Group | Eligible (M) | Participants (M) | Take-up | Avg match | Match cost ($M) | Seed cost ($M) | Total incl. seed ($M) |
 |---|---|---|---|---|---|---|---|---|
-| headline_sipp_observed_conditional | headline | 44.47 | 26.23 | 0.5898 | $539 | $14146 | $4447 | $18593 |
-| headline_dc_access_row_level | headline | 15.22 | 8.98 | 0.5897 | $524 | $4706 | $1522 | $6228 |
-| headline_universal_account_uniform | headline | 29.25 | 17.25 | 0.5897 | $547 | $9440 | $2925 | $12365 |
-| sens_auto_enroll_80pct | sensitivity | 44.47 | 35.58 | 0.8000 | $537 | $19092 | $4447 | $23540 |
-| sens_full_participation_100pct | sensitivity | 44.47 | 44.47 | 1.0000 | $537 | $23866 | $4447 | $28313 |
+| headline_sipp_observed_conditional | headline | 49.78 | 30.83 | 0.6193 | $529 | $16303 | $4978 | $21281 |
+| headline_dc_access_row_level | headline | 17.56 | 10.88 | 0.6193 | $496 | $5393 | $1756 | $7150 |
+| headline_universal_account_uniform | headline | 32.22 | 19.95 | 0.6193 | $547 | $10910 | $3222 | $14132 |
+| sens_auto_enroll_80pct | sensitivity | 49.78 | 39.83 | 0.8000 | $530 | $21093 | $4978 | $26071 |
+| sens_full_participation_100pct | sensitivity | 49.78 | 49.78 | 1.0000 | $530 | $26366 | $4978 | $31345 |
 
 ## Seed variants (participation-invariant)
 
 | Variant | Cost ($M) | Recipients (M) | Full $100 (M) | Avg per recipient | Bottom-3-decile share |
 |---|---|---|---|---|---|
-| flat | $4447 | 44.47 | 44.47 | $100 | 79.0% |
-| pro_rata | $1709 | 44.47 | 0.03 | $38 | 90.9% |
-| flat_then_taper | $3643 | 44.47 | 28.06 | $82 | 84.5% |
-| extended_taper | $5270 | 60.31 | 44.47 | $87 | 74.2% |
+| flat | $4978 | 49.78 | 49.78 | $100 | 75.2% |
+| pro_rata | $1882 | 49.78 | 0.03 | $38 | 88.3% |
+| flat_then_taper | $4025 | 49.78 | 30.99 | $81 | 80.8% |
+| extended_taper | $5836 | 66.91 | 49.78 | $87 | 70.5% |
 
 ## Notes
 

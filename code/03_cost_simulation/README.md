@@ -12,7 +12,11 @@ multipliers) under varying participation assumptions.
 **Reads.**
 - `code/_shared/calibration_cells.R` (sourced for thresholds and `build_modeled_sipp_frame_v2()`).
 - `data/raw/pu2024_expanded.csv` (from `01_sipp_subset_from_dta.R`).
-- `data/raw/irs_soi/22in01pl.xls` (IRS SOI calibration benchmark).
+
+**Does not read** `data/raw/irs_soi/22in01pl.xls`, despite that file being the SOI filer-count benchmark
+cited in the write-ups. The `contribution_bands` values this stage relies on were back-calculated from it
+offline and live as literals in `code/_shared/params.R`. Changing the workbook changes nothing until those
+literals are re-derived by hand.
 
 **Writes.** `output/tables/main/sm_jct_replication_scenarios.xlsx` and a parquet checkpoint consumed
 by `03b`.

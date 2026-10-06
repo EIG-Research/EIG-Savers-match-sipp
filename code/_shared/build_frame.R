@@ -35,8 +35,20 @@ build_modeled_frame <- function(raw, params = sm_params(), seed = 42L) {
       filing_group = filing_group,            # "single_mfs" / "mfj" / "hoh"
       filing_status = FILING_STATUS,          # "Single" / "MFJ" / "MFS" / "HoH"
 
-      # --- income: 2024 base (for contribution bands) and TY2027 projection (D1) ---
-      sm_income_2024       = SM_INCOME,            # MFJ-aware (U1 spouse-pair) base, 2024 nominal
+      # --- income: NOMINAL (SIPP reference year) and TY2027-projected ---
+      # Two bases are carried deliberately, because the two threshold types they are
+      # compared against live at different price levels:
+      #   NOMINAL   -- used by stage 04, whose designated endpoint is a CONTEMPORANEOUS
+      #                ASEC median at the same price level. No projection on either
+      #                side (decision S3, 2026-08-04). Projecting here would move
+      #                eligibility for no reason.
+      #   PROJECTED -- used by stages 02/03, which compare against the FIXED statutory
+      #                sec 6433 TY2027 dollar amounts. Those are not indexed until
+      #                after 2027, so income must be brought to 2027 to meet them.
+      # The `_2024` suffixes are literal under the 2025 SIPP (reference year 2024).
+      sm_income_2024       = SM_INCOME,                  # MFJ-aware (U1 spouse-pair), nominal
+      earnings_nominal     = tpearn_annual_num,          # personal earnings, nominal
+      personal_income_nominal = tptotinc_annual_num,     # total personal income, nominal
       earnings_2027        = tpearn_annual_num * scalar,
       personal_income_2027 = tptotinc_annual_num * scalar,
       sm_income_2027       = SM_INCOME * scalar,   # MFJ-aware (U1 spouse-pair) base, projected

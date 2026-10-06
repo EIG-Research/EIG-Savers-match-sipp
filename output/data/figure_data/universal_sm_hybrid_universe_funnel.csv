@@ -1,7 +1,7 @@
 step_label_chr,unweighted_n_int,weighted_n_num,step_id_int
-01_total_december_persons,36214,331103912,1
-02_age_18_plus,29579,259941662.0991111,2
-03_not_dependent,28637,249485646.12237608,3
-04_not_full_time_student,27733,239912440.32400995,4
-05_has_annual_earned_income,16106,156712853.2948034,5
-06_valid_filing_group,14961,145344746.31424597,6
+01_total_december_persons,31382,332825505,1
+02_age_18_plus,25838,261658850.5515019,2
+03_not_dependent,24986,250739437.57245255,3
+04_not_full_time_student,24248,240857616.17871284,4
+05_has_annual_earned_income,13633,154712241.52902305,5
+06_valid_filing_group,12703,144205485.19958842,6

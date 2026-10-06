@@ -1,10 +1,10 @@
 # 04_03_simulate_match -- Cost and incidence simulation under the hybrid policy
 # Author - Ben Glasner
 # research title - Saver's Match: eligibility and cost analysis (SECURE 2.0 sec 103 / IRC sec 6433)
-# research question - Under the single-line match schedule (200% at $0 MAGI, declining to 50% at the
-#                     pivot -- the design fixes the Single rate at 75% at two-thirds the IRS
-#                     all-single-filer median MAGI, which places the 50% pivot at 0.8x that median -- with
-#                     MFJ/HoH pivots scaled by the SM lower-threshold ratios), what is the cost,
+# research question - Under the single-line match schedule (200% match at $0 income, declining to
+#                     0% at the designated endpoint -- the median total personal income of single
+#                     filers age 15+ from CPS ASEC, with MFJ and HoH endpoints scaled by the
+#                     statutory sec 6433 ratios), what is the cost,
 #                     eligible-worker count, and distributional incidence?
 #
 # DESCRIPTION:
@@ -33,7 +33,7 @@
 #
 # Inputs:
 #   data/processed/universal_sm_hybrid/universe_dec.parquet
-#   data/processed/universal_sm_hybrid/pivot_table.rds
+#   data/processed/universal_sm_hybrid/endpoint_table.rds
 #   code/_shared/calibration_cells.R
 # Outputs:
 #   data/processed/universal_sm_hybrid/simulation_results.parquet
@@ -117,14 +117,13 @@ policy_params <- list(
   default_contrib_rate_num = 0.03,
   max_credit_num           = 1000,
   # NOTE: the match-rate schedule parameters (max rate at $0 MAGI, rate at the
-  # pivot) are NOT set here. They are set once in 04_02 alongside the pivot
-  # derivation, carried in pivot_table.rds as schedule_params_list, and passed
+  # endpoint) are NOT set here. They are set once in 04_02 alongside the endpoint
+  # derivation, carried in endpoint_table.rds as schedule_params_list, and passed
   # through to compute_match_rate() in Section 4 below -- so the simulated
-  # schedule cannot drift from the one the pivots were derived under. Current
-  # design (2026-06-11): 200 percent max rate at $0 MAGI, 50 percent at the
-  # pivot, anchored by fixing the Single rate at 75 percent at two-thirds the
-  # IRS all-single-filer median MAGI (placing the 50 percent pivot at 0.8x that
-  # median and the 0 percent endpoint at (4/3)x pivot = 1.067x).
+  # schedule cannot drift from the one the endpoints were derived under. Current
+  # design (2026-08-04): 200 percent match at $0 income, declining linearly to
+  # 0 percent at the designated endpoint (median total personal income of single
+  # filers age 15+, CPS ASEC; $44,045 nominal 2024 at the ASEC 2025 vintage).
   takeup_no_auto_num       = 0.057,
   takeup_auto_enroll_num   = 0.80,
   takeup_full_num          = 1.00,
@@ -150,43 +149,44 @@ stopifnot(
 )
 
 ###################################################################################
-###                      2) Load Universe and Pivot Table                       ###
+###                    2) Load Universe and Endpoint Table                      ###
 ###################################################################################
 universe_parquet_path_chr <- file.path(path_data_processed_chr, "universe_dec.parquet")
-pivot_rds_path_chr        <- file.path(path_data_processed_chr, "pivot_table.rds")
+endpoint_rds_path_chr        <- file.path(path_data_processed_chr, "endpoint_table.rds")
 
 if (!file.exists(universe_parquet_path_chr)) {
   stop("Universe not found at: ", universe_parquet_path_chr, call. = FALSE)
 }
-if (!file.exists(pivot_rds_path_chr)) {
-  stop("Pivot table not found at: ", pivot_rds_path_chr, call. = FALSE)
+if (!file.exists(endpoint_rds_path_chr)) {
+  stop("Endpoint table not found at: ", endpoint_rds_path_chr, call. = FALSE)
 }
 
 universe_tbl      <- read_parquet(universe_parquet_path_chr)
-pivot_obj_list    <- readRDS(pivot_rds_path_chr)
-sm_pivot_2024_num <- pivot_obj_list$pivot_vec_num
+endpoint_obj_list    <- readRDS(endpoint_rds_path_chr)
+endpoint_vec_num <- endpoint_obj_list$endpoint_vec_num
 
-# Schedule parameters the pivots were derived under (set in 04_02). Stop --
+# Schedule parameters the endpoints were derived under (set in 04_02). Stop --
 # rather than silently falling back to compute_match_rate() defaults -- if the
-# rds predates the parameterization, so a stale pivot table cannot pair with a
+# rds predates the parameterization, so a stale endpoint table cannot pair with a
 # mismatched schedule. Rerun 04_02 to regenerate.
-schedule_params_list <- pivot_obj_list$schedule_params_list
+schedule_params_list <- endpoint_obj_list$schedule_params_list
 if (is.null(schedule_params_list) ||
     is.null(schedule_params_list$max_rate_pp_num) ||
-    is.null(schedule_params_list$pivot_rate_pp_num)) {
-  stop("pivot_table.rds has no schedule_params_list (pre-parameterization vintage). ",
-       "Rerun 04_02_compute_pivots.R to regenerate it.", call. = FALSE)
+    is.null(schedule_params_list$designated_endpoint_num)) {
+  stop("endpoint_table.rds has no schedule_params_list (pre-parameterization vintage). ",
+       "Rerun 04_02_compute_endpoints.R to regenerate it.", call. = FALSE)
 }
-message(sprintf("Schedule parameters (from 04_02): max rate = %d%%, pivot rate = %d%%.",
+message(sprintf("Schedule (from 04_02): %d%% match at $0, declining to 0%% at the designated endpoint $%s (single filer).",
                 round(schedule_params_list$max_rate_pp_num, 0L),
-                round(schedule_params_list$pivot_rate_pp_num, 0L)))
+                formatC(round(schedule_params_list$designated_endpoint_num), format = "d", big.mark = ",")))
 
 message(sprintf("Universe: %d rows (weighted M: %.2f).",
                 nrow(universe_tbl),
                 sum(universe_tbl$WPFINWGT, na.rm = TRUE) / 1e6))
-message("Pivot table:")
-for (g in names(sm_pivot_2024_num)) {
-  message(sprintf("  %-12s: pivot = $%d", g, round(sm_pivot_2024_num[[g]], 0L)))
+message("Designated endpoints by filing group:")
+for (g in names(endpoint_vec_num)) {
+  message(sprintf("  %-12s: endpoint = $%s", g,
+                  formatC(round(endpoint_vec_num[[g]]), format = "d", big.mark = ",")))
 }
 
 ###################################################################################
@@ -233,9 +233,8 @@ universe_tbl <- universe_tbl |>
     match_rate_pp_num    = compute_match_rate(
       magi_num          = magi_num,
       filing_group_chr  = filing_group_chr,
-      pivot_table       = sm_pivot_2024_num,
-      max_rate_pp_num   = schedule_params_list$max_rate_pp_num,
-      pivot_rate_pp_num = schedule_params_list$pivot_rate_pp_num
+      endpoint_table    = endpoint_vec_num,
+      max_rate_pp_num   = schedule_params_list$max_rate_pp_num
     ),
     match_rate_frac_num  = match_rate_pp_num / 100,
     # Contribution base is PERSONAL EARNINGS (earnings_num), not joint MAGI.
@@ -279,19 +278,28 @@ message(sprintf("Eligible workers: %d unweighted (%.2f M weighted)",
 # Three phased alternatives to the flat $100 seed, sharing its $100 maximum and
 # deriving their geometry from the match schedule (see params.R):
 #   pro_rata        -- $100 x match_rate / max_rate; declines along the line.
-#   flat_then_taper -- $100 to the pivot, then linear to $0 at the endpoint.
+#   flat_then_taper -- $100 up to a plateau income, then linear to $0 at the
+#                      designated endpoint.
 #   extended_taper  -- $100 across the eligible band, then linear to $0 at
 #                      seed_extended_endpoint_mult x the endpoint. This variant
 #                      pays some INELIGIBLE workers (just above the band), so it
 #                      is computed over the full universe, not the eligible set.
-seed_endpoint_factor_num <- schedule_params_list$max_rate_pp_num /
-  (schedule_params_list$max_rate_pp_num - schedule_params_list$pivot_rate_pp_num)
-seed_ext_mult_num <- sm_params()$seed_extended_endpoint_mult
+#
+# THE PLATEAU IS A SEED PARAMETER, NOT A MATCH-SCHEDULE PARAMETER. Under the retired
+# parameterization flat_then_taper plateaued at the schedule's interior 50-percent
+# crossing (the "pivot"). That crossing no longer exists as a concept, but the seed
+# variant still needs SOME plateau, so it is now stated directly as a fraction of the
+# designated endpoint. The default 0.75 reproduces the retired behavior exactly
+# (old_pivot = 0.75 x endpoint), so seed costs are comparable across the change.
+seed_plateau_frac_num <- sm_params()$seed_plateau_frac_of_endpoint
+seed_ext_mult_num     <- sm_params()$seed_extended_endpoint_mult
 
 universe_tbl <- universe_tbl |>
   dplyr::mutate(
-    seed_pivot_num    = unname(sm_pivot_2024_num[filing_group_chr]),
-    seed_endpoint_num = seed_endpoint_factor_num * seed_pivot_num,
+    # Income at which each worker's match rate reaches zero.
+    seed_endpoint_num = unname(endpoint_vec_num[filing_group_chr]),
+    # Income up to which flat_then_taper pays the full seed amount.
+    seed_plateau_num  = seed_plateau_frac_num * seed_endpoint_num,
     seed_pro_rata_num = dplyr::if_else(
       eligible_flag,
       policy_params$auto_seed_amount_num * match_rate_pp_num /
@@ -300,9 +308,9 @@ universe_tbl <- universe_tbl |>
     ),
     seed_flat_taper_num = dplyr::case_when(
       !eligible_flag                ~ 0,
-      magi_num <= seed_pivot_num    ~ policy_params$auto_seed_amount_num,
+      magi_num <= seed_plateau_num  ~ policy_params$auto_seed_amount_num,
       magi_num <  seed_endpoint_num ~ policy_params$auto_seed_amount_num *
-        (seed_endpoint_num - magi_num) / (seed_endpoint_num - seed_pivot_num),
+        (seed_endpoint_num - magi_num) / (seed_endpoint_num - seed_plateau_num),
       TRUE                          ~ 0
     ),
     seed_extended_num = dplyr::case_when(

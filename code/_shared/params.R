@@ -62,6 +62,13 @@ sm_params <- function() {
   #                      seed_extended_endpoint_mult x the endpoint
   auto_seed_amount <- 100
   seed_extended_endpoint_mult <- 1.25
+  # Income up to which the flat_then_taper seed variant pays the full amount,
+  # expressed as a fraction of the designated endpoint. This is a SEED parameter,
+  # not a match-schedule parameter -- the match schedule has no interior reference
+  # point. 0.75 reproduces the behavior of the retired parameterization exactly
+  # (its plateau sat at the old 50-percent crossing, which equalled 0.75 x endpoint),
+  # so seed costs remain comparable across the 2026-08-04 respecification.
+  seed_plateau_frac_of_endpoint <- 0.75
 
   # --- Universe sub-population caps (used to flag students / dependents) ---
   # 2024 nominal dollars. Previously hard-coded identically in 4 scripts.
@@ -110,6 +117,7 @@ sm_params <- function() {
     takeup_auto_enroll = takeup_auto_enroll,
     auto_seed_amount = auto_seed_amount,
     seed_extended_endpoint_mult = seed_extended_endpoint_mult,
+    seed_plateau_frac_of_endpoint = seed_plateau_frac_of_endpoint,
     student_earnings_cap = student_earnings_cap,
     dependent_earnings_cap = dependent_earnings_cap,
     contribution_bands = contribution_bands,
@@ -133,6 +141,7 @@ sm_params <- function() {
     match_rate_max > 0, contribution_cap > 0, income_projection_factor > 0,
     auto_seed_amount >= 0,
     seed_extended_endpoint_mult > 1,
+    seed_plateau_frac_of_endpoint > 0, seed_plateau_frac_of_endpoint < 1,
     # m200 lower must equal 2x base lower (derived, but assert the contract)
     all(abs(threshold_lower_by_multiplier$m200 - 2 * threshold_lower) < 1e-9)
   )

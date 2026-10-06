@@ -130,9 +130,18 @@ These are workers who would need to open a new qualifying account to receive the
 
 ## External calibration
 
-This is a SIPP-only analysis at this stage. The one external input is the IRS SOI Table 1 (TY2022)
-AGI-bin filer counts (`data/raw/irs_soi/22in01pl.xls`), used to calibrate the contribution bands and as
-a filer-count benchmark. No survey cross-validation against other microdata is used.
+The microsimulation runs on SIPP. Two IRS Statistics of Income workbooks supply the external
+calibration, in different roles:
+
+| File | Role | Read at runtime? |
+|---|---|---|
+| `data/raw/irs_soi/23in12ms.xls` (Table 1.2, TY2023) | Anchors the Universal Saver's Match hybrid eligibility frontier: the single-plus-MFS median AGI sets the pivot and endpoint of the match-rate schedule (decision D1) | **Yes** — `04_02_compute_pivots.R`; stage 04 fails without it |
+| `data/raw/irs_soi/22in01pl.xls` (Table 1, TY2022) | AGI-bin filer-count benchmark; source for the `contribution_bands` constants in `params.R` | No — back-calculated offline, hard-coded as literals |
+
+The hybrid design is deliberately anchored to published IRS aggregates rather than to the SIPP sample, so
+that the eligibility frontier is reproducible by JCT and CBO without SIPP access. SIPP is used to simulate
+who falls where against that frontier, not to set it. No survey cross-validation against other microdata
+is used. See `data/raw/README.md` for full provenance.
 
 ## Code structure
 

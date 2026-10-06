@@ -29,7 +29,16 @@
 #
 # Required data:
 #   data/raw/pu2024.dta            (SIPP 2024 Wave 1 Stata file; download from Census)
-#   data/raw/irs_soi/22in01pl.xls  (IRS SOI calibration benchmark)
+#   data/raw/irs_soi/23in12ms.xls  (IRS SOI Table 1.2, TY2023, returns by marital status)
+#                                  READ AT RUNTIME by 04_02_compute_pivots.R to anchor the
+#                                  hybrid eligibility frontier (decision D1). Stage 04 stops
+#                                  if absent; stages 01-03 do not need it.
+#
+# Provenance only (checked in, but NOT read by any script):
+#   data/raw/irs_soi/22in01pl.xls  (IRS SOI Table 1, TY2022) -- the source the
+#                                  contribution_bands literals in _shared/params.R were
+#                                  back-calculated from, retained for auditability.
+#   data/raw/irs_soi/22in12ms.xls  superseded TY2022 vintage of the anchor table; unused.
 #
 # Optional: set EIG_PROJECT_ROOT to the repo root before running, or run from
 #   inside the repo tree and the root will be detected automatically.

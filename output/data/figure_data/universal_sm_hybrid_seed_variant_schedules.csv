@@ -171,11 +171,11 @@ Flat $100 (headline),42000,100
 Flat $100 (headline),42250,100
 Flat $100 (headline),42500,100
 Flat $100 (headline),42750,100
-Flat $100 (headline),43000,0
-Flat $100 (headline),43250,0
-Flat $100 (headline),43500,0
-Flat $100 (headline),43750,0
-Flat $100 (headline),44000,0
+Flat $100 (headline),43000,100
+Flat $100 (headline),43250,100
+Flat $100 (headline),43500,100
+Flat $100 (headline),43750,100
+Flat $100 (headline),44000,100
 Flat $100 (headline),44250,0
 Flat $100 (headline),44500,0
 Flat $100 (headline),44750,0
@@ -216,183 +216,191 @@ Flat $100 (headline),53250,0
 Flat $100 (headline),53500,0
 Flat $100 (headline),53750,0
 Flat $100 (headline),54000,0
+Flat $100 (headline),54250,0
+Flat $100 (headline),54500,0
+Flat $100 (headline),54750,0
+Flat $100 (headline),55000,0
+Flat $100 (headline),55250,0
+Flat $100 (headline),55500,0
+Flat $100 (headline),55750,0
+Flat $100 (headline),56000,0
 Pro-rata with match rate,0,100
-Pro-rata with match rate,250,99.41833987416211
-Pro-rata with match rate,500,98.83667974832423
-Pro-rata with match rate,750,98.25501962248636
-Pro-rata with match rate,1000,97.67335949664849
-Pro-rata with match rate,1250,97.09169937081059
-Pro-rata with match rate,1500,96.5100392449727
-Pro-rata with match rate,1750,95.92837911913483
-Pro-rata with match rate,2000,95.34671899329695
-Pro-rata with match rate,2250,94.76505886745906
-Pro-rata with match rate,2500,94.18339874162116
-Pro-rata with match rate,2750,93.60173861578329
-Pro-rata with match rate,3000,93.02007848994543
-Pro-rata with match rate,3250,92.43841836410753
-Pro-rata with match rate,3500,91.85675823826965
-Pro-rata with match rate,3750,91.27509811243176
-Pro-rata with match rate,4000,90.69343798659389
-Pro-rata with match rate,4250,90.111777860756
-Pro-rata with match rate,4500,89.53011773491814
-Pro-rata with match rate,4750,88.94845760908024
-Pro-rata with match rate,5000,88.36679748324235
-Pro-rata with match rate,5250,87.78513735740448
-Pro-rata with match rate,5500,87.2034772315666
-Pro-rata with match rate,5750,86.62181710572871
-Pro-rata with match rate,6000,86.04015697989081
-Pro-rata with match rate,6250,85.45849685405294
-Pro-rata with match rate,6500,84.87683672821508
-Pro-rata with match rate,6750,84.29517660237718
-Pro-rata with match rate,7000,83.7135164765393
-Pro-rata with match rate,7250,83.13185635070141
-Pro-rata with match rate,7500,82.55019622486353
-Pro-rata with match rate,7750,81.96853609902566
-Pro-rata with match rate,8000,81.38687597318777
-Pro-rata with match rate,8250,80.80521584734988
-Pro-rata with match rate,8500,80.223555721512
-Pro-rata with match rate,8750,79.64189559567413
-Pro-rata with match rate,9000,79.06023546983624
-Pro-rata with match rate,9250,78.47857534399836
-Pro-rata with match rate,9500,77.89691521816047
-Pro-rata with match rate,9750,77.31525509232259
-Pro-rata with match rate,10000,76.7335949664847
-Pro-rata with match rate,10250,76.15193484064683
-Pro-rata with match rate,10500,75.57027471480895
-Pro-rata with match rate,10750,74.98861458897106
-Pro-rata with match rate,11000,74.40695446313319
-Pro-rata with match rate,11250,73.8252943372953
-Pro-rata with match rate,11500,73.24363421145742
-Pro-rata with match rate,11750,72.66197408561953
-Pro-rata with match rate,12000,72.08031395978165
-Pro-rata with match rate,12250,71.49865383394376
-Pro-rata with match rate,12500,70.91699370810589
-Pro-rata with match rate,12750,70.335333582268
-Pro-rata with match rate,13000,69.75367345643012
-Pro-rata with match rate,13250,69.17201333059225
-Pro-rata with match rate,13500,68.59035320475436
-Pro-rata with match rate,13750,68.00869307891648
-Pro-rata with match rate,14000,67.4270329530786
-Pro-rata with match rate,14250,66.84537282724071
-Pro-rata with match rate,14500,66.26371270140282
-Pro-rata with match rate,14750,65.68205257556494
-Pro-rata with match rate,15000,65.10039244972707
-Pro-rata with match rate,15250,64.51873232388918
-Pro-rata with match rate,15500,63.937072198051304
-Pro-rata with match rate,15750,63.35541207221342
-Pro-rata with match rate,16000,62.77375194637554
-Pro-rata with match rate,16250,62.192091820537655
-Pro-rata with match rate,16500,61.61043169469977
-Pro-rata with match rate,16750,61.02877156886189
-Pro-rata with match rate,17000,60.447111443024006
-Pro-rata with match rate,17250,59.86545131718613
-Pro-rata with match rate,17500,59.28379119134824
-Pro-rata with match rate,17750,58.702131065510365
-Pro-rata with match rate,18000,58.12047093967248
-Pro-rata with match rate,18250,57.5388108138346
-Pro-rata with match rate,18500,56.957150687996716
-Pro-rata with match rate,18750,56.37549056215883
-Pro-rata with match rate,19000,55.79383043632095
-Pro-rata with match rate,19250,55.21217031048307
-Pro-rata with match rate,19500,54.63051018464519
-Pro-rata with match rate,19750,54.048850058807304
-Pro-rata with match rate,20000,53.467189932969426
-Pro-rata with match rate,20250,52.88552980713154
-Pro-rata with match rate,20500,52.303869681293655
-Pro-rata with match rate,20750,51.72220955545578
-Pro-rata with match rate,21000,51.14054942961789
-Pro-rata with match rate,21250,50.55888930378001
-Pro-rata with match rate,21500,49.97722917794213
-Pro-rata with match rate,21750,49.39556905210425
-Pro-rata with match rate,22000,48.813908926266365
-Pro-rata with match rate,22250,48.23224880042848
-Pro-rata with match rate,22500,47.6505886745906
-Pro-rata with match rate,22750,47.06892854875272
-Pro-rata with match rate,23000,46.48726842291484
-Pro-rata with match rate,23250,45.90560829707695
-Pro-rata with match rate,23500,45.323948171239074
-Pro-rata with match rate,23750,44.74228804540119
-Pro-rata with match rate,24000,44.160627919563304
-Pro-rata with match rate,24250,43.578967793725425
-Pro-rata with match rate,24500,42.99730766788755
-Pro-rata with match rate,24750,42.41564754204966
-Pro-rata with match rate,25000,41.83398741621178
-Pro-rata with match rate,25250,41.2523272903739
-Pro-rata with match rate,25500,40.67066716453601
-Pro-rata with match rate,25750,40.08900703869813
-Pro-rata with match rate,26000,39.50734691286025
-Pro-rata with match rate,26250,38.925686787022364
-Pro-rata with match rate,26500,38.344026661184486
-Pro-rata with match rate,26750,37.7623665353466
-Pro-rata with match rate,27000,37.18070640950872
-Pro-rata with match rate,27250,36.59904628367084
-Pro-rata with match rate,27500,36.01738615783295
-Pro-rata with match rate,27750,35.435726031995074
-Pro-rata with match rate,28000,34.85406590615719
-Pro-rata with match rate,28250,34.2724057803193
-Pro-rata with match rate,28500,33.69074565448143
-Pro-rata with match rate,28750,33.10908552864355
-Pro-rata with match rate,29000,32.52742540280566
-Pro-rata with match rate,29250,31.945765276967776
-Pro-rata with match rate,29500,31.36410515112989
-Pro-rata with match rate,29750,30.782445025292017
-Pro-rata with match rate,30000,30.200784899454135
-Pro-rata with match rate,30250,29.61912477361625
-Pro-rata with match rate,30500,29.037464647778364
-Pro-rata with match rate,30750,28.455804521940493
-Pro-rata with match rate,31000,27.874144396102608
-Pro-rata with match rate,31250,27.292484270264723
-Pro-rata with match rate,31500,26.710824144426837
-Pro-rata with match rate,31750,26.129164018588952
-Pro-rata with match rate,32000,25.547503892751084
-Pro-rata with match rate,32250,24.965843766913196
-Pro-rata with match rate,32500,24.38418364107531
-Pro-rata with match rate,32750,23.802523515237425
-Pro-rata with match rate,33000,23.220863389399536
-Pro-rata with match rate,33250,22.63920326356167
-Pro-rata with match rate,33500,22.057543137723783
-Pro-rata with match rate,33750,21.475883011885898
-Pro-rata with match rate,34000,20.894222886048013
-Pro-rata with match rate,34250,20.31256276021014
-Pro-rata with match rate,34500,19.730902634372256
-Pro-rata with match rate,34750,19.14924250853437
-Pro-rata with match rate,35000,18.567582382696486
-Pro-rata with match rate,35250,17.9859222568586
-Pro-rata with match rate,35500,17.40426213102073
-Pro-rata with match rate,35750,16.822602005182844
-Pro-rata with match rate,36000,16.24094187934496
-Pro-rata with match rate,36250,15.659281753507074
-Pro-rata with match rate,36500,15.077621627669188
-Pro-rata with match rate,36750,14.495961501831315
-Pro-rata with match rate,37000,13.914301375993432
-Pro-rata with match rate,37250,13.332641250155548
-Pro-rata with match rate,37500,12.750981124317661
-Pro-rata with match rate,37750,12.16932099847979
-Pro-rata with match rate,38000,11.587660872641905
-Pro-rata with match rate,38250,11.00600074680402
-Pro-rata with match rate,38500,10.424340620966134
-Pro-rata with match rate,38750,9.84268049512825
-Pro-rata with match rate,39000,9.261020369290378
-Pro-rata with match rate,39250,8.679360243452493
-Pro-rata with match rate,39500,8.097700117614608
-Pro-rata with match rate,39750,7.516039991776722
-Pro-rata with match rate,40000,6.934379865938837
-Pro-rata with match rate,40250,6.352719740100965
-Pro-rata with match rate,40500,5.7710596142630814
-Pro-rata with match rate,40750,5.189399488425194
-Pro-rata with match rate,41000,4.60773936258731
-Pro-rata with match rate,41250,4.026079236749439
-Pro-rata with match rate,41500,3.4444191109115536
-Pro-rata with match rate,41750,2.8627589850736683
-Pro-rata with match rate,42000,2.281098859235783
-Pro-rata with match rate,42250,1.6994387333978977
-Pro-rata with match rate,42500,1.1177786075600267
-Pro-rata with match rate,42750,0.5361184817221414
-Pro-rata with match rate,43000,0
-Pro-rata with match rate,43250,0
-Pro-rata with match rate,43500,0
-Pro-rata with match rate,43750,0
-Pro-rata with match rate,44000,0
+Pro-rata with match rate,250,99.43239868316496
+Pro-rata with match rate,500,98.8647973663299
+Pro-rata with match rate,750,98.29719604949486
+Pro-rata with match rate,1000,97.72959473265978
+Pro-rata with match rate,1250,97.16199341582472
+Pro-rata with match rate,1500,96.59439209898966
+Pro-rata with match rate,1750,96.02679078215462
+Pro-rata with match rate,2000,95.45918946531955
+Pro-rata with match rate,2250,94.8915881484845
+Pro-rata with match rate,2500,94.32398683164945
+Pro-rata with match rate,2750,93.7563855148144
+Pro-rata with match rate,3000,93.18878419797933
+Pro-rata with match rate,3250,92.62118288114429
+Pro-rata with match rate,3500,92.05358156430923
+Pro-rata with match rate,3750,91.48598024747417
+Pro-rata with match rate,4000,90.91837893063912
+Pro-rata with match rate,4250,90.35077761380407
+Pro-rata with match rate,4500,89.78317629696902
+Pro-rata with match rate,4750,89.21557498013395
+Pro-rata with match rate,5000,88.64797366329891
+Pro-rata with match rate,5250,88.08037234646385
+Pro-rata with match rate,5500,87.51277102962881
+Pro-rata with match rate,5750,86.94516971279373
+Pro-rata with match rate,6000,86.37756839595868
+Pro-rata with match rate,6250,85.80996707912362
+Pro-rata with match rate,6500,85.24236576228856
+Pro-rata with match rate,6750,84.6747644454535
+Pro-rata with match rate,7000,84.10716312861845
+Pro-rata with match rate,7250,83.5395618117834
+Pro-rata with match rate,7500,82.97196049494835
+Pro-rata with match rate,7750,82.4043591781133
+Pro-rata with match rate,8000,81.83675786127824
+Pro-rata with match rate,8250,81.26915654444318
+Pro-rata with match rate,8500,80.70155522760814
+Pro-rata with match rate,8750,80.13395391077307
+Pro-rata with match rate,9000,79.56635259393802
+Pro-rata with match rate,9250,78.99875127710297
+Pro-rata with match rate,9500,78.43114996026792
+Pro-rata with match rate,9750,77.86354864343285
+Pro-rata with match rate,10000,77.2959473265978
+Pro-rata with match rate,10250,76.72834600976275
+Pro-rata with match rate,10500,76.16074469292768
+Pro-rata with match rate,10750,75.59314337609263
+Pro-rata with match rate,11000,75.02554205925757
+Pro-rata with match rate,11250,74.45794074242252
+Pro-rata with match rate,11500,73.89033942558747
+Pro-rata with match rate,11750,73.3227381087524
+Pro-rata with match rate,12000,72.75513679191737
+Pro-rata with match rate,12250,72.1875354750823
+Pro-rata with match rate,12500,71.61993415824725
+Pro-rata with match rate,12750,71.0523328414122
+Pro-rata with match rate,13000,70.48473152457714
+Pro-rata with match rate,13250,69.91713020774209
+Pro-rata with match rate,13500,69.34952889090702
+Pro-rata with match rate,13750,68.78192757407197
+Pro-rata with match rate,14000,68.2143262572369
+Pro-rata with match rate,14250,67.64672494040187
+Pro-rata with match rate,14500,67.0791236235668
+Pro-rata with match rate,14750,66.51152230673175
+Pro-rata with match rate,15000,65.9439209898967
+Pro-rata with match rate,15250,65.37631967306163
+Pro-rata with match rate,15500,64.80871835622659
+Pro-rata with match rate,15750,64.24111703939153
+Pro-rata with match rate,16000,63.67351572255649
+Pro-rata with match rate,16250,63.10591440572142
+Pro-rata with match rate,16500,62.53831308888637
+Pro-rata with match rate,16750,61.97071177205131
+Pro-rata with match rate,17000,61.40311045521626
+Pro-rata with match rate,17250,60.835509138381205
+Pro-rata with match rate,17500,60.26790782154614
+Pro-rata with match rate,17750,59.7003065047111
+Pro-rata with match rate,18000,59.132705187876034
+Pro-rata with match rate,18250,58.56510387104098
+Pro-rata with match rate,18500,57.99750255420592
+Pro-rata with match rate,18750,57.42990123737087
+Pro-rata with match rate,19000,56.86229992053582
+Pro-rata with match rate,19250,56.29469860370075
+Pro-rata with match rate,19500,55.72709728686571
+Pro-rata with match rate,19750,55.15949597003065
+Pro-rata with match rate,20000,54.591894653195595
+Pro-rata with match rate,20250,54.02429333636054
+Pro-rata with match rate,20500,53.456692019525484
+Pro-rata with match rate,20750,52.889090702690424
+Pro-rata with match rate,21000,52.32148938585537
+Pro-rata with match rate,21250,51.753888069020334
+Pro-rata with match rate,21500,51.18628675218526
+Pro-rata with match rate,21750,50.61868543535021
+Pro-rata with match rate,22000,50.051084118515156
+Pro-rata with match rate,22250,49.483482801680104
+Pro-rata with match rate,22500,48.91588148484505
+Pro-rata with match rate,22750,48.34828016801
+Pro-rata with match rate,23000,47.780678851174926
+Pro-rata with match rate,23250,47.213077534339874
+Pro-rata with match rate,23500,46.64547621750482
+Pro-rata with match rate,23750,46.07787490066977
+Pro-rata with match rate,24000,45.51027358383472
+Pro-rata with match rate,24250,44.942672266999665
+Pro-rata with match rate,24500,44.375070950164606
+Pro-rata with match rate,24750,43.80746963332955
+Pro-rata with match rate,25000,43.23986831649449
+Pro-rata with match rate,25250,42.672266999659435
+Pro-rata with match rate,25500,42.10466568282438
+Pro-rata with match rate,25750,41.53706436598932
+Pro-rata with match rate,26000,40.96946304915427
+Pro-rata with match rate,26250,40.40186173231922
+Pro-rata with match rate,26500,39.83426041548417
+Pro-rata with match rate,26750,39.2666590986491
+Pro-rata with match rate,27000,38.69905778181405
+Pro-rata with match rate,27250,38.131456464978996
+Pro-rata with match rate,27500,37.563855148143944
+Pro-rata with match rate,27750,36.99625383130889
+Pro-rata with match rate,28000,36.42865251447384
+Pro-rata with match rate,28250,35.86105119763878
+Pro-rata with match rate,28500,35.29344988080373
+Pro-rata with match rate,28750,34.72584856396866
+Pro-rata with match rate,29000,34.15824724713361
+Pro-rata with match rate,29250,33.59064593029856
+Pro-rata with match rate,29500,33.023044613463505
+Pro-rata with match rate,29750,32.45544329662845
+Pro-rata with match rate,30000,31.887841979793397
+Pro-rata with match rate,30250,31.320240662958344
+Pro-rata with match rate,30500,30.752639346123278
+Pro-rata with match rate,30750,30.185038029288226
+Pro-rata with match rate,31000,29.61743671245317
+Pro-rata with match rate,31250,29.04983539561812
+Pro-rata with match rate,31500,28.482234078783065
+Pro-rata with match rate,31750,27.91463276194801
+Pro-rata with match rate,32000,27.347031445112957
+Pro-rata with match rate,32250,26.77943012827789
+Pro-rata with match rate,32500,26.21182881144284
+Pro-rata with match rate,32750,25.644227494607787
+Pro-rata with match rate,33000,25.07662617777273
+Pro-rata with match rate,33250,24.50902486093768
+Pro-rata with match rate,33500,23.941423544102626
+Pro-rata with match rate,33750,23.37382222726757
+Pro-rata with match rate,34000,22.806220910432515
+Pro-rata with match rate,34250,22.23861959359745
+Pro-rata with match rate,34500,21.671018276762403
+Pro-rata with match rate,34750,21.103416959927344
+Pro-rata with match rate,35000,20.535815643092292
+Pro-rata with match rate,35250,19.96821432625724
+Pro-rata with match rate,35500,19.400613009422184
+Pro-rata with match rate,35750,18.83301169258713
+Pro-rata with match rate,36000,18.26541037575207
+Pro-rata with match rate,36250,17.697809058917013
+Pro-rata with match rate,36500,17.13020774208196
+Pro-rata with match rate,36750,16.562606425246905
+Pro-rata with match rate,37000,15.995005108411853
+Pro-rata with match rate,37250,15.427403791576799
+Pro-rata with match rate,37500,14.859802474741747
+Pro-rata with match rate,37750,14.292201157906682
+Pro-rata with match rate,38000,13.72459984107163
+Pro-rata with match rate,38250,13.156998524236574
+Pro-rata with match rate,38500,12.589397207401522
+Pro-rata with match rate,38750,12.021795890566466
+Pro-rata with match rate,39000,11.454194573731414
+Pro-rata with match rate,39250,10.88659325689636
+Pro-rata with match rate,39500,10.318991940061306
+Pro-rata with match rate,39750,9.751390623226241
+Pro-rata with match rate,40000,9.183789306391187
+Pro-rata with match rate,40250,8.616187989556135
+Pro-rata with match rate,40500,8.04858667272108
+Pro-rata with match rate,40750,7.480985355886027
+Pro-rata with match rate,41000,6.913384039050974
+Pro-rata with match rate,41250,6.345782722215921
+Pro-rata with match rate,41500,5.778181405380856
+Pro-rata with match rate,41750,5.210580088545802
+Pro-rata with match rate,42000,4.642978771710748
+Pro-rata with match rate,42250,4.075377454875695
+Pro-rata with match rate,42500,3.5077761380406414
+Pro-rata with match rate,42750,2.940174821205588
+Pro-rata with match rate,43000,2.3725735043705343
+Pro-rata with match rate,43250,1.8049721875354698
+Pro-rata with match rate,43500,1.237370870700416
+Pro-rata with match rate,43750,0.6697695538653625
+Pro-rata with match rate,44000,0.10216823703030897
 Pro-rata with match rate,44250,0
 Pro-rata with match rate,44500,0
 Pro-rata with match rate,44750,0
@@ -433,6 +441,14 @@ Pro-rata with match rate,53250,0
 Pro-rata with match rate,53500,0
 Pro-rata with match rate,53750,0
 Pro-rata with match rate,54000,0
+Pro-rata with match rate,54250,0
+Pro-rata with match rate,54500,0
+Pro-rata with match rate,54750,0
+Pro-rata with match rate,55000,0
+Pro-rata with match rate,55250,0
+Pro-rata with match rate,55500,0
+Pro-rata with match rate,55750,0
+Pro-rata with match rate,56000,0
 "Flat, then taper",0,100
 "Flat, then taper",250,100
 "Flat, then taper",500,100
@@ -562,54 +578,54 @@ Pro-rata with match rate,54000,0
 "Flat, then taper",31500,100
 "Flat, then taper",31750,100
 "Flat, then taper",32000,100
-"Flat, then taper",32250,99.86337506765275
-"Flat, then taper",32500,97.53673456430123
-"Flat, then taper",32750,95.2100940609497
-"Flat, then taper",33000,92.88345355759817
-"Flat, then taper",33250,90.55681305424665
-"Flat, then taper",33500,88.2301725508951
-"Flat, then taper",33750,85.90353204754358
-"Flat, then taper",34000,83.57689154419205
-"Flat, then taper",34250,81.25025104084052
-"Flat, then taper",34500,78.923610537489
-"Flat, then taper",34750,76.59697003413747
-"Flat, then taper",35000,74.27032953078594
-"Flat, then taper",35250,71.9436890274344
-"Flat, then taper",35500,69.61704852408288
-"Flat, then taper",35750,67.29040802073135
-"Flat, then taper",36000,64.96376751737982
-"Flat, then taper",36250,62.637127014028295
-"Flat, then taper",36500,60.31048651067677
-"Flat, then taper",36750,57.98384600732523
-"Flat, then taper",37000,55.65720550397371
-"Flat, then taper",37250,53.33056500062218
-"Flat, then taper",37500,51.003924497270646
-"Flat, then taper",37750,48.677283993919126
-"Flat, then taper",38000,46.3506434905676
-"Flat, then taper",38250,44.024002987216065
-"Flat, then taper",38500,41.69736248386454
-"Flat, then taper",38750,39.37072198051301
-"Flat, then taper",39000,37.04408147716148
-"Flat, then taper",39250,34.71744097380995
-"Flat, then taper",39500,32.39080047045842
-"Flat, then taper",39750,30.064159967106892
-"Flat, then taper",40000,27.737519463755365
-"Flat, then taper",40250,25.410878960403835
-"Flat, then taper",40500,23.084238457052304
-"Flat, then taper",40750,20.757597953700778
-"Flat, then taper",41000,18.430957450349247
-"Flat, then taper",41250,16.10431694699772
-"Flat, then taper",41500,13.77767644364619
-"Flat, then taper",41750,11.45103594029466
-"Flat, then taper",42000,9.124395436943132
-"Flat, then taper",42250,6.797754933591603
-"Flat, then taper",42500,4.471114430240075
-"Flat, then taper",42750,2.1444739268885455
-"Flat, then taper",43000,0
-"Flat, then taper",43250,0
-"Flat, then taper",43500,0
-"Flat, then taper",43750,0
-"Flat, then taper",44000,0
+"Flat, then taper",32250,100
+"Flat, then taper",32500,100
+"Flat, then taper",32750,100
+"Flat, then taper",33000,100
+"Flat, then taper",33250,98.03609944375071
+"Flat, then taper",33500,95.76569417641049
+"Flat, then taper",33750,93.49528890907027
+"Flat, then taper",34000,91.22488364173005
+"Flat, then taper",34250,88.95447837438982
+"Flat, then taper",34500,86.68407310704961
+"Flat, then taper",34750,84.41366783970939
+"Flat, then taper",35000,82.14326257236917
+"Flat, then taper",35250,79.87285730502894
+"Flat, then taper",35500,77.60245203768872
+"Flat, then taper",35750,75.33204677034851
+"Flat, then taper",36000,73.06164150300829
+"Flat, then taper",36250,70.79123623566807
+"Flat, then taper",36500,68.52083096832784
+"Flat, then taper",36750,66.25042570098762
+"Flat, then taper",37000,63.980020433647404
+"Flat, then taper",37250,61.70961516630719
+"Flat, then taper",37500,59.439209898966965
+"Flat, then taper",37750,57.16880463162675
+"Flat, then taper",38000,54.898399364286526
+"Flat, then taper",38250,52.6279940969463
+"Flat, then taper",38500,50.35758882960609
+"Flat, then taper",38750,48.087183562265864
+"Flat, then taper",39000,45.81677829492565
+"Flat, then taper",39250,43.546373027585425
+"Flat, then taper",39500,41.2759677602452
+"Flat, then taper",39750,39.005562492904986
+"Flat, then taper",40000,36.73515722556476
+"Flat, then taper",40250,34.46475195822455
+"Flat, then taper",40500,32.19434669088432
+"Flat, then taper",40750,29.923941423544104
+"Flat, then taper",41000,27.65353615620388
+"Flat, then taper",41250,25.38313088886366
+"Flat, then taper",41500,23.112725621523442
+"Flat, then taper",41750,20.842320354183222
+"Flat, then taper",42000,18.571915086843003
+"Flat, then taper",42250,16.30150981950278
+"Flat, then taper",42500,14.03110455216256
+"Flat, then taper",42750,11.76069928482234
+"Flat, then taper",43000,9.490294017482121
+"Flat, then taper",43250,7.219888750141901
+"Flat, then taper",43500,4.94948348280168
+"Flat, then taper",43750,2.67907821546146
+"Flat, then taper",44000,0.40867294812123967
 "Flat, then taper",44250,0
 "Flat, then taper",44500,0
 "Flat, then taper",44750,0
@@ -650,6 +666,14 @@ Pro-rata with match rate,54000,0
 "Flat, then taper",53500,0
 "Flat, then taper",53750,0
 "Flat, then taper",54000,0
+"Flat, then taper",54250,0
+"Flat, then taper",54500,0
+"Flat, then taper",54750,0
+"Flat, then taper",55000,0
+"Flat, then taper",55250,0
+"Flat, then taper",55500,0
+"Flat, then taper",55750,0
+"Flat, then taper",56000,0
 Extended taper,0,100
 Extended taper,250,100
 Extended taper,500,100
@@ -822,48 +846,56 @@ Extended taper,42000,100
 Extended taper,42250,100
 Extended taper,42500,100
 Extended taper,42750,100
-Extended taper,43000,99.81783342353698
-Extended taper,43250,97.49119292018545
-Extended taper,43500,95.16455241683393
-Extended taper,43750,92.8379119134824
-Extended taper,44000,90.51127141013086
-Extended taper,44250,88.18463090677933
-Extended taper,44500,85.8579904034278
-Extended taper,44750,83.53134990007628
-Extended taper,45000,81.20470939672475
-Extended taper,45250,78.87806889337323
-Extended taper,45500,76.5514283900217
-Extended taper,45750,74.22478788667016
-Extended taper,46000,71.89814738331863
-Extended taper,46250,69.5715068799671
-Extended taper,46500,67.24486637661558
-Extended taper,46750,64.91822587326405
-Extended taper,47000,62.59158536991252
-Extended taper,47250,60.26494486656099
-Extended taper,47500,57.93830436320946
-Extended taper,47750,55.611663859857934
-Extended taper,48000,53.2850233565064
-Extended taper,48250,50.95838285315487
-Extended taper,48500,48.631742349803346
-Extended taper,48750,46.30510184645182
-Extended taper,49000,43.978461343100285
-Extended taper,49250,41.65182083974876
-Extended taper,49500,39.32518033639723
-Extended taper,49750,36.9985398330457
-Extended taper,50000,34.67189932969417
-Extended taper,50250,32.34525882634264
-Extended taper,50500,30.018618322991113
-Extended taper,50750,27.691977819639586
-Extended taper,51000,25.365337316288056
-Extended taper,51250,23.038696812936525
-Extended taper,51500,20.712056309584998
-Extended taper,51750,18.385415806233468
-Extended taper,52000,16.05877530288194
-Extended taper,52250,13.73213479953041
-Extended taper,52500,11.405494296178881
-Extended taper,52750,9.078853792827353
-Extended taper,53000,6.752213289475823
-Extended taper,53250,4.425572786124294
-Extended taper,53500,2.0989322827727657
-Extended taper,53750,0
-Extended taper,54000,0
+Extended taper,43000,100
+Extended taper,43250,100
+Extended taper,43500,100
+Extended taper,43750,100
+Extended taper,44000,100
+Extended taper,44250,98.13826768078101
+Extended taper,44500,95.8678624134408
+Extended taper,44750,93.59745714610058
+Extended taper,45000,91.32705187876036
+Extended taper,45250,89.05664661142013
+Extended taper,45500,86.78624134407991
+Extended taper,45750,84.5158360767397
+Extended taper,46000,82.24543080939948
+Extended taper,46250,79.97502554205926
+Extended taper,46500,77.70462027471903
+Extended taper,46750,75.43421500737881
+Extended taper,47000,73.1638097400386
+Extended taper,47250,70.89340447269838
+Extended taper,47500,68.62299920535816
+Extended taper,47750,66.35259393801793
+Extended taper,48000,64.08218867067771
+Extended taper,48250,61.81178340333749
+Extended taper,48500,59.54137813599728
+Extended taper,48750,57.270972868657054
+Extended taper,49000,55.00056760131684
+Extended taper,49250,52.730162333976615
+Extended taper,49500,50.45975706663639
+Extended taper,49750,48.189351799296176
+Extended taper,50000,45.91894653195595
+Extended taper,50250,43.64854126461574
+Extended taper,50500,41.378135997275514
+Extended taper,50750,39.10773072993529
+Extended taper,51000,36.837325462595075
+Extended taper,51250,34.56692019525485
+Extended taper,51500,32.296514927914636
+Extended taper,51750,30.026109660574413
+Extended taper,52000,27.755704393234193
+Extended taper,52250,25.485299125893974
+Extended taper,52500,23.21489385855375
+Extended taper,52750,20.94448859121353
+Extended taper,53000,18.67408332387331
+Extended taper,53250,16.403678056533092
+Extended taper,53500,14.133272789192871
+Extended taper,53750,11.862867521852651
+Extended taper,54000,9.59246225451243
+Extended taper,54250,7.3220569871722105
+Extended taper,54500,5.05165171983199
+Extended taper,54750,2.7812464524917697
+Extended taper,55000,0.5108411851515495
+Extended taper,55250,0
+Extended taper,55500,0
+Extended taper,55750,0
+Extended taper,56000,0

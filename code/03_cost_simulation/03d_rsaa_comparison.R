@@ -31,7 +31,7 @@ fr <- arrow::read_parquet(frame_path)
 R  <- rsaa_params()
 
 hybrid_scn   <- arrow::read_parquet(file.path(hybrid_dir, "scenario_results.parquet"))
-hybrid_pivot <- arrow::read_parquet(file.path(hybrid_dir, "pivot_table.parquet"))
+hybrid_endpoint <- arrow::read_parquet(file.path(hybrid_dir, "endpoint_table.parquet"))
 
 out_tbl_dir <- file.path(path_output, "tables", "rsaa_comparison")
 out_fig_dir <- file.path(path_output, "data", "figure_data")
@@ -142,8 +142,8 @@ hybrid_eligible_M <- hybrid_ladder$eligible_M[1]   # 44.47 (published)
 # only in-universe workers WITHOUT employer access. Use the frame's any-match m100 band as the
 # statutory Saver's Match band proxy is NOT the hybrid band -- instead reconstruct the hybrid
 # band from the pivot schedule so the Venn is exact.
-piv <- setNames(as.list(hybrid_pivot$pivot_num), hybrid_pivot$filing_group_chr)
-end <- setNames(as.list(hybrid_pivot$endpoint_num), hybrid_pivot$filing_group_chr)
+piv <- setNames(as.list(hybrid_endpoint$pivot_num), hybrid_endpoint$filing_group_chr)
+end <- setNames(as.list(hybrid_endpoint$endpoint_num), hybrid_endpoint$filing_group_chr)
 fg_key <- fr$filing_group
 hybrid_endpoint <- dplyr::case_when(
   fg_key == "single_mfs" ~ end[["single_mfs"]],
@@ -192,8 +192,8 @@ fs_map <- list(
 )
 gen_rows <- lapply(names(fs_map), function(fs) {
   fg <- fs_map[[fs]]$fg
-  pivot    <- hybrid_pivot$pivot_num[hybrid_pivot$filing_group_chr == fg]
-  endpoint <- hybrid_pivot$endpoint_num[hybrid_pivot$filing_group_chr == fg]
+  pivot    <- hybrid_endpoint$pivot_num[hybrid_endpoint$filing_group_chr == fg]
+  endpoint <- hybrid_endpoint$endpoint_num[hybrid_endpoint$filing_group_chr == fg]
   hyb_rate <- hybrid_rate_single_curve(grid, pivot, endpoint)
   hyb_credit <- pmin(hyb_rate * R$default_contribution_rate * grid, 1000)   # $1,000/person cap
   rc_g <- rsaa_credit_vec(grid, rep(fs, length(grid)))

@@ -53,14 +53,20 @@ funnel_steps_tbl$step_id_int <- seq_len(nrow(funnel_steps_tbl))
 write_csv(funnel_steps_tbl, file.path(path_output_reports_chr, "universe_funnel.csv"))
 
 # --- Materialize the analysis universe (= in_universe) with the column contract 04_02-06 read ---
-# Income columns are TY2027-projected; access/worker-class flags come straight from the canonical frame.
-# Worker-class flags are kept for ROUTING in 04_03 only (not as a population filter).
+# INCOME IS NOMINAL, NOT PROJECTED (decision S3, 2026-08-04). Stage 04's designated
+# endpoint is a contemporaneous CPS ASEC median at the same price level as the SIPP
+# reference year, so both sides of the comparison are nominal dollars of that year and
+# no projection is applied. This is a change from the prior TY2027-projected basis,
+# which existed to meet the FIXED statutory sec 6433 2027 thresholds -- those still
+# govern stages 02/03, which continue to use the projected columns.
+# Access/worker-class flags come straight from the canonical frame. Worker-class flags
+# are kept for ROUTING in 04_03 only (not as a population filter).
 universe_tbl <- fr[which(m6), ] |>
   transmute(
     SSUID = ssuid, PNUM = pnum, WPFINWGT = weight, EFSTATUS = efstatus, TAGE = age,
     filing_group_chr = filing_group,
-    magi_num = sm_income_2027,                 # TY2027 MAGI (was sm_magi_2024_num)
-    earnings_num = earnings_2027,              # TY2027 personal earnings (was tpearn_annual_num)
+    magi_num = sm_income_2024,                 # nominal MFJ-aware MAGI (SIPP reference year)
+    earnings_num = earnings_nominal,           # nominal personal earnings
     has_existing_dc_flag = has_dc_account,
     participating_dc_flag = is_participating_dc,
     any_retirement_access_v2_chr = any_retirement_access,
